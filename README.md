@@ -22,7 +22,7 @@ Daarna: vul bij **Instellingen** je RSN in. Voor je questvoortgang installeer je
 
 ## Een nieuwe versie uitbrengen (voor de maintainer)
 
-Push een tag `vX.Y.Z` naar GitHub. De workflow **Release** bouwt dan op Windows de installer + portable en zet ze met `latest.yml` (voor auto-update) in GitHub Releases. Het versienummer komt uit de tag.
+Verhoog `version` in `package.json` (bijv. `0.4.0` → `0.4.1`) en push naar `main`. De workflow **Release** ziet dat er voor dat nummer nog geen release is, bouwt op Windows de installer + portable en publiceert ze met `latest.yml` (voor auto-update) in GitHub Releases. Een tag `vX.Y.Z` pushen of de workflow handmatig starten (Actions → Release → Run workflow) kan ook.
 
 ## Zelf draaien vanuit de broncode
 

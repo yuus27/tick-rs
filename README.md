@@ -1,89 +1,167 @@
-# tick. — je OSRS + RS3 cockpit
+<div align="center">
 
-Een desktop-app die je naast RuneLite of de RS3-client open hebt: de complete wiki, quest- en skill guides, een GE-terminal, money-making op jouw stats en een persoonlijke "wat zal ik nu doen?"-adviseur. Alles draait op je eigen pc; tick. leest alleen data en automatiseert niets in de game.
+<img src="build/icon.png" width="96" alt="tick. logo">
 
-> Fanproject, niet gelieerd aan of goedgekeurd door Jagex. Wiki-inhoud: RuneScape Wiki & OSRS Wiki (CC BY-NC-SA 3.0).
+# tick.
 
-## Downloaden
+**Je persoonlijke cockpit voor Old School RuneScape én RuneScape 3.**
+De wiki weet alles over RuneScape, de game weet alles over jou. tick. koppelt die twee,
+zodat je niet meer zoekt, maar gewoon ziet wat je nú kunt en moet doen.
 
-**[⬇ Nieuwste versie](https://github.com/yuus27/tick-rs/releases/latest)**
+[**⬇ Download voor Windows**](https://github.com/yuus27/tick-rs/releases/latest) &nbsp;·&nbsp; [Wat kan het?](#wat-kan-tick) &nbsp;·&nbsp; [Installeren](#installeren) &nbsp;·&nbsp; [Vragen](#veelgestelde-vragen)
 
-- **`tick-setup-x.y.z.exe`** (aanbevolen): installeert tick. en **werkt zichzelf automatisch bij** bij nieuwe versies.
-- **`tick-portable-x.y.z.exe`**: zonder installatie, bijv. vanaf een USB-stick. Werkt niet automatisch bij.
+<img src="docs/screenshots/nu-spelen.jpg" alt="Nu spelen: een persoonlijk sessieplan op basis van je account" width="100%">
 
-Windows toont de eerste keer *"Windows heeft uw pc beschermd"*, omdat de app niet ondertekend is. Klik **Meer informatie → Toch uitvoeren**.
+</div>
 
-Daarna: vul bij **Instellingen** je RSN in. Voor je questvoortgang installeer je **WikiSync** (zie [Je account koppelen](#je-account-koppelen)).
+---
 
-## Updates
+## Wat is tick.?
 
-- De geïnstalleerde app zoekt bij het opstarten en elke 4 uur naar een nieuwe versie, downloadt die op de achtergrond en vraagt of je wilt herstarten. Je data blijft altijd bewaard (`%APPDATA%\tick\data`).
-- Handmatig: tray-icoon → *Zoek naar updates*, of Instellingen → Updates.
+Een desktop-app die je naast RuneLite of de RS3-client open hebt. Je vult je RuneScape-naam in en tick. haalt je levels, XP en questvoortgang op. Daarna legt het **jouw account** over de complete RuneScape Wiki heen: quests, voorwaarden, skill guides, money-making en live Grand Exchange-prijzen.
 
-## Een nieuwe versie uitbrengen (voor de maintainer)
+Het resultaat: geen tien browsertabs en zelf eisen vergelijken meer. Je krijgt antwoorden die op jou van toepassing zijn.
 
-Verhoog `version` in `package.json` (bijv. `0.4.0` → `0.4.1`) en push naar `main`. De workflow **Release** ziet dat er voor dat nummer nog geen release is, bouwt op Windows de installer + portable en publiceert ze met `latest.yml` (voor auto-update) in GitHub Releases. Een tag `vX.Y.Z` pushen of de workflow handmatig starten (Actions → Release → Run workflow) kan ook.
-
-## Zelf draaien vanuit de broncode
-
-1. Installeer **Node.js LTS**: https://nodejs.org
-2. Dubbelklik **`start-tick.bat`** (browserversie op `http://localhost:5177`) of **`desktop-testen.bat`** (desktopvenster).
-3. Code aangepast? `rebuild-tick.bat`. Hot reload: `npm run dev`. Zelf een .exe bouwen: `desktop-bouwen.bat`.
-
-## Desktop-app (eigen venster, icoon, tray)
-
-- **Bouwen:** dubbelklik `desktop-bouwen.bat`. In de map `release` komen een installer (`tick-setup-*.exe`) en een losse `tick-portable-*.exe`.
-- **Snel testen zonder bouwen:** `desktop-testen.bat`.
-- **In de app:** de punaise rechtsboven of **Ctrl+Shift+T** zet tick. *altijd bovenop*, handig op je tweede scherm naast de game. Via het tray-icoon: altijd bovenop, start met Windows, open in browser, datamap.
-- **Je data** staat in `%APPDATA%\tick\data`, gedeeld door de geïnstalleerde app en `desktop-testen.bat`. De eerste start neemt data uit de browserversie (`data\`) mee. Overzetten kan ook via Instellingen → Exporteer/Importeer backup.
-
-## Flipping Utilities
-
-GE-terminal → Flip-journaal → **Importeer uit Flipping Utilities**. tick. leest automatisch `%USERPROFILE%\.runelite\flipping\*.json`, koppelt aankopen aan verkopen (FIFO) en slaat flips over die al in je journaal staan. Een CSV- of JSON-bestand kiezen kan ook.
-
-## Diagnose
-
-Instellingen → **Diagnose** (of `#/diag`). Test alle wiki-uitlezing, prijzen en je account, en maakt een rapport dat je kunt kopiëren.
-
-## Wat zit erin
-
-| Onderdeel | Wat het doet | Bron |
+| De vraag die je jezelf stelt | Zonder tick. | Met tick. |
 |---|---|---|
-| **Dashboard** | Stats, comeback-modus, beste flips, doelen, game-updates | Hiscores, WikiSync, wiki |
-| **Nu spelen** | Persoonlijke adviseur: plan op basis van je levels, XP, quests én quest-voorwaarden, quest-XP (level-ups), training per level met XP/u uit de skill guides, combo's (train → quest), money-making, runs en GE. Members/F2P en ironman. | Jouw account + wiki |
-| **Unlock-radar** | Welke paar levels openen de meeste quests en money-methodes | Quest skill requirements, money making guide |
-| **Markt-radar** | Anomaliedetectie op de GE (volumepiek, prijssprong/crash, pump, dump, spread) met 24u-baseline | Wiki real-time prices (/1h) |
-| **GE-terminal** | Flip finder met marge ná tax, ROI, buy limits, realistische winst/4u, grafieken, watchlist met prijsalerts, flip-journaal | Wiki real-time prices |
-| **Quests** | Optimale questroute met jouw voortgang, alle quests met filters | Optimal quest guide, questlijst |
-| **Quest guide** | Requirements-paneel (jouw levels vs. vereist, boostable, quest-prereqs ✓), items, startpunt, **quick guide** én volledige guide | Questpagina + `/Quick guide` |
-| **Skill guides 1–99** | Per skill: Pay-to-play, Free-to-play, Ironman, Questing (quest-XP) en Overzicht. De route laat zien waar jij nu zit. | Trainingsgidsen op de wiki |
-| **Wiki** | De complete wiki in de app; elke link opent in tick. | MediaWiki API |
-| **Money-making** | Alle methodes, gefilterd op wat jouw account kan | Money making guide |
-| **Doelen** | Skill- en quest-doelen, stappenplan, streak | Lokaal |
-| **Calculators** | Kopen of grinden (in uren van jóuw tijd), XP, dry-kans, GE-tax, combat level | Officiële XP-formule, live prijzen |
+| *"Wat zal ik vandaag doen?"* | Wiki openen, quests vergelijken met je stats, voorwaarden nalopen, skill guides lezen | Kies *"1,5 uur, chill"* en krijg een plan, met per blok waaróm |
+| *"Hoe verdien ik geld met mijn stats?"* | 500+ methodes, inclusief bosses met 99-eisen | Alleen wat jij kunt, en of je onder de aanbevolen levels zit |
+| *"Welke quest kan ik nu doen?"* | Per quest de eisen en voorwaarden-boom checken | Al gecheckt, in de optimale volgorde, met de level-ups die hij oplevert |
+| *"Waar train ik naartoe?"* | Zelf uitzoeken welke levels iets openen | *"Thieving 14 → 25 opent 7 quests"*, met de beste methode voor jouw level |
+| *"Is dit een goede flip?"* | Prijs en een simpele grafiek | Marge ná GE-tax, buy limits, volume, winst per 4 uur, marktalarmen |
 
-Wissel bovenaan de sidebar tussen **OSRS** en **RS3**: alle schermen schakelen mee.
+> **Geen bot.** tick. leest alleen openbare data (wiki, hiscores, WikiSync) en doet niets in de game.
 
-## Je account koppelen
+---
 
-- **OSRS**: vul je RSN in. Voor questvoortgang: installeer de **WikiSync**-plugin in RuneLite en log één keer in.
-- **RS3**: vul je RSN in en installeer **WikiSync** via de Plugin Hub in de RS3-client (toolbox-icoon → Browse → WikiSync → Install, daarna inschakelen bij Manage). Log één keer in en tick. ziet je quests en levels.
+## Wat kan tick.?
 
-## Privacy en veiligheid
+### 🎯 Nu spelen: je persoonlijke adviseur
+Kies hoeveel tijd je hebt en waar je zin in hebt (questen, AFK, bossen, geld) en tick. maakt een sessieplan. Het weegt mee:
+- **quests die je echt kunt doen**, inclusief de voorwaarden-boom van elke quest;
+- **quest-XP**: quests die je een level opleveren of iets vrijspelen krijgen voorrang;
+- **training per level**: de methode uit de skill guide die bij jóuw level hoort, met XP/uur en een tijdsinschatting;
+- **combo's**: *"train Mining 1 → 10, doe dan meteen The Knight's Sword"*;
+- **bijna-level-ups**, money-methodes die bij je passen, runs en je GE-slots;
+- **members/F2P en ironman** (geen GE-flips of koopmethodes voor ironmen).
 
-- De server luistert alleen op `127.0.0.1`, dus niet vanaf je netwerk.
-- Hij praat uitsluitend met een vaste lijst bronnen: wiki, prices.runescape.wiki, de officiële hiscores en WikiSync. Het is geen open proxy.
-- Wiki-HTML wordt gesanitized (DOMPurify) voordat hij getoond wordt.
-- Je data (journaal, doelen, watchlist, instellingen) staat in `data/*.json`. Je kunt het exporteren via Instellingen.
-- Wil je je eigen contactinfo in de User-Agent (wordt gewaardeerd door de wiki)? Zet de omgevingsvariabele `TICK_UA`.
+Wissel, verwijder of voeg blokken toe tot het plan klopt.
 
-## Structuur
+### 💰 Money-making op jouw stats
+<img src="docs/screenshots/money-making.jpg" alt="Money-making gefilterd op je eigen levels" width="100%">
 
+De volledige money making guide van de wiki, gefilterd op wat jouw account kan. tick. leest per methode wat **vereist** is en wat **aanbevolen**, inclusief "of"-eisen (*Attack, Ranged, Magic óf Necromancy 90*), combat level en quests. Je ziet direct: *comfortabel*, *net onder aanbevolen*, *ver onder aanbevolen* of *locked*.
+
+### 📜 Quests en quest guides
+<table><tr>
+<td width="50%"><img src="docs/screenshots/quests.jpg" alt="Optimale questroute met jouw voortgang"></td>
+<td width="50%"><img src="docs/screenshots/quest-guide.jpg" alt="Quest guide met requirements tegenover jouw levels"></td>
+</tr></table>
+
+De **optimale questroute** van de wiki met jouw voortgang, en per quest een requirements-paneel: jouw levels naast wat vereist is, boostable-eisen, quest-voorwaarden ✓/✗, items en startpunt. Daaronder de **quick guide** én de volledige guide, gewoon in de app.
+
+### 📈 Skill guides 1–99
+<img src="docs/screenshots/skill-guide.jpg" alt="Skill guide met jouw positie in de route" width="100%">
+
+Per skill de trainingsroute in meerdere varianten: **Pay-to-play, Free-to-play, Ironman, Questing** (welke quests XP geven) en een overzicht. De route laat zien waar jij nu zit.
+
+### 🔓 Unlock-radar
+<img src="docs/screenshots/unlock-radar.jpg" alt="Unlock-radar: welke levels openen de meeste content" width="100%">
+
+Welke paar levels openen de meeste quests en money-methodes? tick. rekent het uit en sorteert op "meeste nieuwe content per XP".
+
+### 📊 GE-terminal en Markt-radar
+<table><tr>
+<td width="50%"><img src="docs/screenshots/ge-terminal.jpg" alt="GE-terminal met flip finder"></td>
+<td width="50%"><img src="docs/screenshots/markt-radar.jpg" alt="Markt-radar met anomaliedetectie"></td>
+</tr></table>
+
+- **GE-terminal:** flip finder met marge ná tax, ROI, buy limits en realistische winst per 4 uur, grafieken, een watchlist met prijsalerts en een flip-journaal (importeert ook uit **Flipping Utilities**).
+- **Markt-radar:** detecteert ongewone marktbewegingen (volumepieken, prijssprongen en -crashes, mogelijke pumps en dumps) tegen een baseline van 24 uur.
+
+### 📚 De complete wiki, in de app
+<img src="docs/screenshots/wiki.jpg" alt="Wiki-pagina in tick." width="100%">
+
+Zoek met **Ctrl+K** in de OSRS- of RS3-wiki; elke link opent gewoon in tick.
+
+### En verder
+- **Dashboard** met je stats, beste flips, doelen en de laatste game-updates.
+- **Doelen** voor skills en quests, opgeknipt in stappen, met een streak.
+- **Calculators:** *kopen of grinden* (in uren van jóuw tijd), XP, drop-kansen, GE-tax, combat level.
+- **Altijd bovenop** (Ctrl+Shift+T): handig op een tweede scherm naast de game.
+
+### OSRS én RS3
+<table><tr>
+<td width="50%"><img src="docs/screenshots/dashboard-osrs.jpg" alt="Dashboard voor Old School"></td>
+<td width="50%"><img src="docs/screenshots/dashboard-rs3.jpg" alt="Dashboard voor RuneScape 3"></td>
+</tr></table>
+
+Wissel met één klik tussen Old School en RuneScape 3; alle schermen schakelen mee.
+
+---
+
+## Installeren
+
+1. Download **`tick-setup-x.y.z.exe`** van de [releases-pagina](https://github.com/yuus27/tick-rs/releases/latest).
+   *Liever zonder installatie? Neem `tick-portable-x.y.z.exe` (werkt niet automatisch bij).*
+2. Windows toont de eerste keer *"Windows heeft uw pc beschermd"*, omdat de app niet ondertekend is. Klik **Meer informatie → Toch uitvoeren**.
+3. Open **Instellingen** en vul je RuneScape-naam in (OSRS en/of RS3).
+4. Koppel je questvoortgang met **WikiSync**:
+   - **OSRS:** installeer de plugin *WikiSync* in RuneLite (Plugin Hub) en log één keer in.
+   - **RS3:** in de RS3-client: toolbox-icoon → **Plugin Hub** → zoek *WikiSync* → Install, en zet hem aan bij *Manage*. Log één keer in.
+
+   Zonder WikiSync werken levels, prijzen en guides gewoon; je quests vink je dan zelf af op de Quests-pagina.
+
+### Updates
+De geïnstalleerde app zoekt bij het opstarten en elke 4 uur naar een nieuwe versie, downloadt die op de achtergrond en vraagt of je wilt herstarten. Je data blijft altijd bewaard. Handmatig zoeken: tray-icoon → *Zoek naar updates*, of **Instellingen → Updates**.
+
+---
+
+## Veelgestelde vragen
+
+**Is dit niet gewoon wat al in de game en op de wiki staat?**
+De data komt inderdaad van de wiki en de game. Wat tick. toevoegt, is de **combinatie met jouw account**: het legt quest-eisen, voorwaarden, quest-XP, skill guides en money-making over elkaar heen en filtert op wat jij kunt. Dat doet niemand handmatig. Losse tools zoals Quest Helper of Flipping Utilities blijven nuttig; tick. is de laag erboven die alles samenbrengt.
+
+**Is het veilig? Kan ik gebanned worden?**
+tick. leest alleen openbare data en verandert niets aan je game of client. Het is geen plugin en geen bot.
+
+**Wat gebeurt er met mijn data?**
+Alles blijft op je eigen pc (`%APPDATA%\tick\data`). Er is geen account, geen server van ons en geen tracking. tick. draait een kleine lokale server op `127.0.0.1` die alleen praat met een vaste lijst bronnen: de wiki's, de wiki-prijzen-API, de officiële hiscores en WikiSync.
+
+**Werkt het op Mac of Linux?**
+De kant-en-klare app is er (nog) alleen voor Windows. Vanaf de broncode draait tick. overal waar Node.js draait (zie hieronder).
+
+**Iets werkt niet goed?**
+Ga naar **Instellingen → Diagnose**, klik op *Kopieer rapport* en open een [issue](https://github.com/yuus27/tick-rs/issues) of stuur het rapport door.
+
+---
+
+<details>
+<summary><b>Voor ontwikkelaars</b></summary>
+
+### Zelf draaien vanuit de broncode
+1. Installeer **Node.js LTS** (https://nodejs.org).
+2. `start-tick.bat` (browserversie op `http://localhost:5177`) of `desktop-testen.bat` (desktopvenster). Hot reload: `npm run dev`.
+3. Zelf een .exe bouwen: `desktop-bouwen.bat` (komt in `release/`).
+
+### Nieuwe versie uitbrengen
+Verhoog `version` in `package.json` en push naar `main`. De workflow **Release** bouwt op Windows de installer + portable en publiceert ze met `latest.yml` (voor auto-update) in GitHub Releases. De workflow **Screenshots** ververst de afbeeldingen in deze README (handmatig te starten via Actions).
+
+### Structuur
 ```
-server/index.js     lokale server: proxy, cache, opslag
-web/src/lib         games.js (OSRS/RS3-verschillen), wiki.js (parsen), market.js (GE), xp.js
+server/index.js     lokale server: allowlist-proxy, cache, opslag
+electron/           desktop-app: venster, tray, auto-update
+web/src/lib         games.js (OSRS/RS3-verschillen), wiki.js (parsen), intel.js + advisor.js (adviseur),
+                    mmg.js (money-making), market.js (GE), xp.js
 web/src/pages       alle schermen
-web/src/components  sidebar, zoekbalk, UI-bouwstenen
+docs/               screenshot-script
 ```
 
-Inhoud van de wiki's valt onder CC BY-NC-SA 3.0.
+### Diagnose
+`#/diag` test alle wiki-uitlezing, prijzen en je account en maakt een rapport om te kopiëren.
+
+</details>
+
+---
+
+<sub>tick. is een fanproject en is niet gelieerd aan, gesponsord door of goedgekeurd door Jagex Ltd. RuneScape en Old School RuneScape zijn handelsmerken van Jagex Ltd. Wiki-inhoud is afkomstig van de [RuneScape Wiki](https://runescape.wiki) en de [Old School RuneScape Wiki](https://oldschool.runescape.wiki) (CC BY-NC-SA 3.0). Prijsdata via de [Real-time Prices API](https://prices.runescape.wiki).</sub>

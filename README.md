@@ -18,7 +18,7 @@ zodat je niet meer zoekt, maar gewoon ziet wat je nú kunt en moet doen.
 
 ## Wat is tick.?
 
-Een desktop-app die je naast RuneLite of de RS3-client open hebt. Je vult je RuneScape-naam in en tick. haalt je levels, XP en questvoortgang op. Daarna legt het **jouw account** over de complete RuneScape Wiki heen: quests, voorwaarden, skill guides, money-making en live Grand Exchange-prijzen.
+Een desktop-app die je naast RuneLite of de RS3-client open hebt. Je vult je RuneScape-naam in en tick. haalt je levels, XP en questvoortgang op. Daarna legt het **jouw account** over de complete RuneScape Wiki heen: quests, voorwaarden, skill guides, money-making, achievement diaries, de wereldkaart en live Grand Exchange-prijzen.
 
 Het resultaat: geen tien browsertabs en zelf eisen vergelijken meer. Je krijgt antwoorden die op jou van toepassing zijn.
 
@@ -29,6 +29,9 @@ Het resultaat: geen tien browsertabs en zelf eisen vergelijken meer. Je krijgt a
 | *"Welke quest kan ik nu doen?"* | Per quest de eisen en voorwaarden-boom checken | Al gecheckt, in de optimale volgorde, met de level-ups die hij oplevert |
 | *"Waar train ik naartoe?"* | Zelf uitzoeken welke levels iets openen | *"Thieving 14 → 25 opent 7 quests"*, met de beste methode voor jouw level |
 | *"Is dit een goede flip?"* | Prijs en een simpele grafiek | Marge ná GE-tax, buy limits, volume, winst per 4 uur, marktalarmen |
+| *"Waar begint deze quest?"* | "Show on map" in de browser, zelf zoeken | Klik in tick. en de ingebouwde kaart opent met een pin, met alle quest-startpunten erbij |
+| *"Welke diary-taken kan ik al?"* | Per regio 4 tiers aan taken naast je stats leggen | Alle 492 taken gecheckt: wat nu kan, wat bijna kan en welke tier het dichtstbij is |
+| *"Wat heb ik vanavond eigenlijk bereikt?"* | Zelf XP en levels bijhouden | Start een sessie en zie na afloop je XP, levels, quests en GE-winst |
 
 > **Geen bot.** tick. leest alleen openbare data (wiki, hiscores, WikiSync) en doet niets in de game.
 

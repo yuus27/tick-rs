@@ -84,17 +84,17 @@ Welke paar levels openen de meeste quests en money-methodes? tick. rekent het ui
 
 Zoek met **Ctrl+K** in de OSRS- of RS3-wiki; elke link opent gewoon in tick.
 
-### 🗺️ Wereldkaart <sub>vanaf 0.5.0</sub>
+### 🗺️ Wereldkaart <sub>vanaf 0.4.2</sub>
 <img src="docs/screenshots/kaart.jpg" alt="Wereldkaart met quest-startpunten" width="100%">
 
 De kaart van de wiki, ingebouwd en altijd de nieuwste versie: de hele wereld plus alle kerkers en verdiepingen. Elke **"Show on map"**-link in tick. opent hier met een pin. Alle **quest-startpunten** staan erop, gekleurd naar jouw voortgang; klik er een aan voor het startpunt en de quest-gids.
 
-### 🏅 Achievement diaries <sub>vanaf 0.5.0 · OSRS</sub>
+### 🏅 Achievement diaries <sub>vanaf 0.4.2 · OSRS</sub>
 <img src="docs/screenshots/diaries.jpg" alt="Achievement diaries: wat je nu kunt doen" width="100%">
 
 Alle diary-taken van de 12 regio's naast jouw levels, quests en voortgang (via WikiSync). tick. laat zien welke taken je **nu** kunt doen, welke je **bijna** kunt (een paar levels, of boostable), en welke tier je het snelst afrondt voor de beloning.
 
-### ⏱️ Sessies <sub>vanaf 0.5.0</sub>
+### ⏱️ Sessies <sub>vanaf 0.4.2</sub>
 <img src="docs/screenshots/sessies.jpg" alt="Sessierapport met XP, levels, quests en GE-winst" width="100%">
 
 Klik op *Start sessie* als je gaat spelen. Na afloop zie je wat het opleverde: XP per skill, levels, voltooide quests en je GE-winst. Elke sessie wordt bewaard, zodat je ziet welke avonden het meest opleverden.

@@ -2,7 +2,7 @@
 // training per level (uit de skill guides), money-methodes, unlocks en de GE tot gescoorde suggesties.
 import { useMemo } from 'react';
 import { useAsync } from './api.js';
-import { resolveTitle, parsePage, toDoc, extractQuestDetails, questStatus, stripTags } from './wiki.js';
+import { resolveTitle, parsePage, toDoc, extractQuestDetails, questStatus, stripTags, myQuestPoints } from './wiki.js';
 import { GAMES, guideCandidates } from './games.js';
 import { normTitle, nl, short } from './format.js';
 import { xpFor, levelFor, progressToNext } from './xp.js';
@@ -226,6 +226,7 @@ export function computeAdvice({ game, intel, levels, skillsXp, questXp, prereq, 
       return true;
     };
     const xpOf = (s) => skillsXp[s] ?? xpFor(lv(s));
+    const myQp = myQuestPoints(intel.list, questMap);
     const qx = questXp || {};
     const pq = prereq || {};
     const tr = training || {};
@@ -255,6 +256,7 @@ export function computeAdvice({ game, intel, levels, skillsXp, questXp, prereq, 
       const k = normTitle(q.title);
       const pr = pq[k];
       const missQ = pr ? pr.quests.filter((t) => questStatus(questMap, t) !== 'done') : [];
+      if (pr?.qp && myQp < pr.qp) missQ.push(`${pr.qp} QP (jij ${myQp})`);
       const missSk = [...q.miss];
       if (pr?.skills?.length) for (const s of pr.skills) if (lv(s.skill) < s.level && !missSk.some((m) => m.skill === s.skill)) missSk.push({ skill: s.skill, level: s.level, cur: lv(s.skill), boostable: s.boostable });
       const mins = LENGTH_MIN(q.meta?.length);

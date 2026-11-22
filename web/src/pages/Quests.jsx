@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '../lib/store.jsx';
 import { useAsync } from '../lib/api.js';
-import { questList, optimalRoute, questStatus } from '../lib/wiki.js';
+import { myQuestPoints, questList, optimalRoute, questStatus } from '../lib/wiki.js';
 import { Icon, PageHead, SkelRows, Empty, ErrorBox, Ring, delay, CountUp } from '../components/ui.jsx';
 import { href } from '../lib/router.js';
 import { normTitle } from '../lib/format.js';
@@ -46,7 +46,7 @@ export default function Quests() {
 
   const total = list.data?.length || Object.keys(pq || {}).length;
   const done = list.data ? list.data.filter((x) => st(x.title) === 'done').length : Object.values(pq || {}).filter((v) => v === 'done').length;
-  const qp = player.data?.questPoints != null ? player.data.questPoints : (list.data || []).filter((x) => st(x.title) === 'done').reduce((a, x) => a + (x.qp || 0), 0);
+  const qp = player.data?.questPoints != null ? player.data.questPoints : myQuestPoints(list.data, pq);
   const hasProgress = !manualQuests || Object.keys(pq).length > 0;
 
   const routeItems = useMemo(() => (route.data || []).map((t, i) => ({ t, i: i + 1, s: st(t), meta: byTitle[normTitle(t)] })), [route.data, pq, byTitle]);

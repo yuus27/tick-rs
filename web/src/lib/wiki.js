@@ -217,11 +217,17 @@ export function readTables(root, { headerMatch } = {}) {
     if (/^H\d$/.test(node.tagName)) { heading = node.textContent.trim(); return; }
     const trs = [...node.querySelectorAll('tr')];
     if (!trs.length) return;
-    const head = [...trs[0].children].map((c) => c.textContent.trim().toLowerCase());
+    // Kop zonder tekst (alleen een icoon, bv. de QP-kolom op de OSRS-questlijst): neem alt/title/data-skill
+    const head = [...trs[0].children].map((c) => (c.textContent.trim() || c.querySelector('[data-skill]')?.getAttribute('data-skill') || c.querySelector('img[alt]')?.getAttribute('alt') || c.querySelector('a[title]')?.getAttribute('title') || '').trim().toLowerCase());
     if (headerMatch && !head.some((h) => headerMatch.test(h))) return;
     res.push({ heading, head, rows: trs.slice(1).map((tr) => [...tr.children]).filter((cells) => cells.length >= 2) });
   });
   return res;
+}
+
+// Jouw quest points: som van de QP van voltooide quests uit de questlijst
+export function myQuestPoints(list, questMap) {
+  return (list || []).filter((q) => questStatus(questMap, q.title) === 'done').reduce((a, q) => a + (q.qp || 0), 0);
 }
 
 // ---------- questlijst ----------

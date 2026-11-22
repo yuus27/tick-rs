@@ -1,11 +1,12 @@
 # Maakt verse screenshots voor de README met live wiki-data en zet ze in docs/screenshots.
+# Draait vanzelf bij een nieuwe versie (package.json) en handmatig via Actions → Screenshots.
 name: Screenshots
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [docs/screenshots.mjs, .github/workflows/screenshots.yml]
+    paths: [docs/screenshots.mjs, .github/workflows/screenshots.yml, package.json]
 
 permissions:
   contents: write

@@ -9,7 +9,7 @@ import { guideCandidates } from '../lib/games.js';
 import { parseRange } from './SkillGuide.jsx';
 import { Icon, PageHead, delay } from '../components/ui.jsx';
 
-const VERSION = '0.4.0';
+const VERSION = '0.4.1';
 const unwrap = (r) => (r && typeof r === 'object' && 'data' in r ? r.data : r);
 const keysOf = (o) => (o && typeof o === 'object' ? Object.keys(o).slice(0, 8) : []);
 
@@ -46,7 +46,8 @@ function buildTests(game, cfg, rsn) {
       const f2p = l.filter((q) => q.members === false).length;
       const mem = l.filter((q) => q.members === true).length;
       const withLen = l.filter((q) => q.length).length;
-      return { ok: l.length > 100, warn: l.length > 0 && l.length <= 100, msg: `${l.length} quests · ${f2p} F2P · ${mem} members · ${withLen} met lengte`, sample: l.slice(0, 3) };
+      const withQp = l.filter((q) => q.qp > 0).length;
+      return { ok: l.length > 100 && withQp > 50, warn: (l.length > 0 && l.length <= 100) || withQp <= 50, msg: `${l.length} quests · ${f2p} F2P · ${mem} members · ${withLen} met lengte · ${withQp} met QP`, sample: l.slice(0, 3) };
     }],
     ['Optimale route', async () => {
       const r = await optimalRoute(game, (ctx.quests || []).map((q) => q.title));

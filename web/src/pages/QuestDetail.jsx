@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../lib/store.jsx';
 import { useAsync } from '../lib/api.js';
-import { parsePage, toDoc, extractQuestDetails, resolveTitle, questStatus, stripTags, optimalRoute, questList } from '../lib/wiki.js';
+import { myQuestPoints, parsePage, toDoc, extractQuestDetails, resolveTitle, questStatus, stripTags, optimalRoute, questList } from '../lib/wiki.js';
 import WikiContent from '../components/WikiContent.jsx';
 import { Icon, Skel, ErrorBox, SkillIcon, Bar, Ring, delay } from '../components/ui.jsx';
 import { href } from '../lib/router.js';
@@ -62,8 +62,13 @@ export default function QuestDetail({ title }) {
   const knownQuest = (t) => questStatus(pq, t) || (manualQuests ? 'none' : null);
   const prereqOpen = prereqs.filter((t) => { const s = knownQuest(t); return s && s !== 'done'; });
   const myStatus = questStatus(pq, view?.title || title);
-  const total = skills.length + prereqs.filter((t) => knownQuest(t)).length;
-  const met = skills.filter((s) => s.ok).length + prereqs.filter((t) => knownQuest(t) === 'done').length;
+  // QP-eis meetellen (bv. Dragon Slayer I: 32 QP)
+  const needQp = view?.d?.questPoints || 0;
+  const myQp = useMemo(() => myQuestPoints(list.data, pq), [list.data, pq]);
+  const qpKnown = needQp > 0 && (list.data?.length > 0) && (hasLevels || !manualQuests || Object.keys(pq).length > 0);
+  const qpOk = qpKnown ? myQp >= needQp : null;
+  const total = skills.length + prereqs.filter((t) => knownQuest(t)).length + (qpKnown ? 1 : 0);
+  const met = skills.filter((s) => s.ok).length + prereqs.filter((t) => knownQuest(t) === 'done').length + (qpOk ? 1 : 0);
   const readiness = total ? met / total : hasLevels ? 1 : 0;
 
   const ridx = (route.data || []).findIndex((t) => normTitle(t) === normTitle(view?.title || title));
@@ -113,12 +118,12 @@ export default function QuestDetail({ title }) {
                 <span className="small muted">klaar om te starten</span>
               </Ring>
               <div style={{ textAlign: 'center', fontWeight: 600 }}>
-                {!hasLevels ? 'Stel je RSN in om requirements te checken' : missing.length === 0 && prereqOpen.length === 0 ? <span className="up">Je voldoet aan alle bekende requirements</span> : <span>Nog <span className="acc">{missing.length + prereqOpen.length}</span> requirement{missing.length + prereqOpen.length === 1 ? '' : 's'} open</span>}
+                {(() => { const open = missing.length + prereqOpen.length + (qpOk === false ? 1 : 0); return !hasLevels ? 'Stel je RSN in om requirements te checken' : open === 0 ? <span className="up">Je voldoet aan alle bekende requirements</span> : <span>Nog <span className="acc">{open}</span> requirement{open === 1 ? '' : 's'} open</span>; })()}
               </div>
               <div className="row wrap" style={{ justifyContent: 'center' }}>
                 {view.d?.difficulty && <span className="tag">{view.d.difficulty.textContent.trim().slice(0, 30)}</span>}
                 {view.d?.length && <span className="tag">{view.d.length.textContent.trim().slice(0, 30)}</span>}
-                {view.d?.questPoints && <span className="tag acc">{view.d.questPoints} QP vereist</span>}
+                {needQp > 0 && <span className={`tag ${qpOk === false ? 'no' : qpOk ? 'ok' : 'acc'}`} title={qpKnown ? `Jij hebt ${myQp} quest points` : undefined}>{needQp} QP vereist{qpKnown ? ` · jij ${myQp}` : ''}</span>}
                 {view.d?.combat && <span className="tag">Combat {view.d.combat}</span>}
               </div>
             </div>

@@ -13,7 +13,7 @@ const SHOTS = [
   { game: 'osrs', path: '#/play', file: 'nu-spelen', h: 1300, deep: true },
   { game: 'rs3', path: '#/money', file: 'money-making', h: 1000 },
   { game: 'osrs', path: '#/quests', file: 'quests', h: 1000 },
-  { game: 'osrs', path: '#/quests/Dragon%20Slayer%20I', file: 'quest-guide', h: 1000 },
+  { game: 'osrs', path: '#/quests/Tribal%20Totem', file: 'quest-guide', h: 1000 },
   { game: 'osrs', path: '#/skills/Woodcutting', file: 'skill-guide', h: 1000 },
   { game: 'osrs', path: '#/ge', file: 'ge-terminal', h: 1000 },
   { game: 'osrs', path: '#/market', file: 'markt-radar', h: 1000, slow: true },

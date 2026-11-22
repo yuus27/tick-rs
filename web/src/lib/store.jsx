@@ -11,6 +11,9 @@ const DEFAULTS = {
   goals: [],
   history: [],
   quests: { osrs: {}, rs3: {} },
+  sessions: { active: null, history: [] },
+  portfolio: { osrs: [], rs3: [] },
+  paper: { osrs: { cash: 10000000, positions: [], trades: [] }, rs3: { cash: 100000000, positions: [], trades: [] } },
 };
 
 export function AppProvider({ children }) {

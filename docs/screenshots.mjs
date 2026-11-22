@@ -19,6 +19,9 @@ const SHOTS = [
   { game: 'osrs', path: '#/market', file: 'markt-radar', h: 1000, slow: true },
   { game: 'rs3', path: '#/radar', file: 'unlock-radar', h: 1000 },
   { game: 'osrs', path: '#/wiki/Abyssal%20whip', file: 'wiki', h: 1000 },
+  { game: 'osrs', path: '#/map', file: 'kaart', h: 1000, slow: true },
+  { game: 'osrs', path: '#/diaries', file: 'diaries', h: 1200, slow: true },
+  { game: 'osrs', path: '#/sessions', file: 'sessies', h: 1000 },
   { game: 'rs3', path: '#/', file: 'dashboard-rs3', h: 900 },
 ];
 
@@ -45,6 +48,16 @@ await put('goals', [
   { id: 'demo2', type: 'quest', game: 'osrs', title: 'Monkey Madness I', skills: [], createdAt: Date.now() },
   { id: 'demo3', type: 'skill', game: 'rs3', skill: 'Mining', level: 30, startXp: 0, createdAt: Date.now() },
 ]);
+
+// Voorbeeld-sessies, zodat de sessiegeschiedenis iets laat zien
+const H = 3600e3, now = Date.now();
+const sess = (d, mins, skills, quests, flips, gp) => ({ id: 'demo' + d, game: 'osrs', rsn: RSN, start: now - d * 24 * H - mins * 60e3, end: now - d * 24 * H, skills, xp: skills.reduce((a, x) => a + x.xp, 0), levels: skills.reduce((a, x) => a + x.to - x.from, 0), quests, flips, gp });
+await put('sessions', { active: null, history: [
+  sess(0, 95, [{ skill: 'Woodcutting', xp: 48210, from: 61, to: 63 }, { skill: 'Firemaking', xp: 12400, from: 58, to: 58 }], [], 3, 412000),
+  sess(1, 140, [{ skill: 'Attack', xp: 61200, from: 70, to: 71 }, { skill: 'Strength', xp: 58800, from: 72, to: 73 }, { skill: 'Hitpoints', xp: 39900, from: 74, to: 74 }, { skill: 'Slayer', xp: 21300, from: 66, to: 67 }], ['The Grand Tree'], 0, 0),
+  sess(2, 60, [{ skill: 'Agility', xp: 22100, from: 52, to: 53 }], ['Monkey Madness I'], 5, 1180000),
+  sess(4, 75, [{ skill: 'Fishing', xp: 31500, from: 68, to: 69 }, { skill: 'Cooking', xp: 18900, from: 72, to: 72 }], [], 2, 260000),
+] });
 
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
 await fs.mkdir(OUT, { recursive: true });

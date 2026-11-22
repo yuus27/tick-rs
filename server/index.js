@@ -131,6 +131,119 @@ app.get('/api/:game/wiki', wrap(async (req, res) => {
   res.json(data);
 }));
 
+// ---------- bucket-API (gestructureerde wiki-data), alleen vaste, server-side opgebouwde queries ----------
+const BUCKETS = {
+  osrs: {
+    gear: {
+      bucket: 'infobox_bonuses',
+      fields: ['page_name', 'equipment_slot', 'stab_attack_bonus', 'slash_attack_bonus', 'crush_attack_bonus', 'range_attack_bonus', 'magic_attack_bonus',
+        'stab_defence_bonus', 'slash_defence_bonus', 'crush_defence_bonus', 'range_defence_bonus', 'magic_defence_bonus',
+        'strength_bonus', 'ranged_strength_bonus', 'magic_damage_bonus', 'prayer_bonus', 'weapon_attack_speed', 'combat_style'],
+    },
+    items: { bucket: 'infobox_item', fields: ['page_name', 'item_name', 'item_id', 'is_members_only', 'tradeable', 'buy_limit', 'high_alchemy_value', 'quest'] },
+  },
+  rs3: {
+    gear: {
+      bucket: 'infobox_bonuses',
+      fields: ['page_name', 'equipment_slot', 'equipment_type', 'combat_class', 'equipment_tier', 'weapon_damage', 'weapon_accuracy', 'equipment_armour',
+        'equipment_life_points', 'weapon_attack_speed', 'attack_style', 'prayer_bonus', 'strength_bonus', 'ranged_bonus', 'magic_bonus', 'necromancy_bonus'],
+    },
+    items: { bucket: 'infobox_item', fields: ['page_name', 'item_name', 'item_id', 'is_members_only', 'tradeable'] },
+  },
+};
+app.get('/api/:game/bucket/:name', wrap(async (req, res) => {
+  const g = gameOf(req);
+  const def = BUCKETS[req.params.game]?.[req.params.name];
+  if (!def) throw new UpstreamError(400, 'Onbekende dataset');
+  const rows = [];
+  for (let offset = 0; offset < 40000; offset += 5000) {
+    const query = `bucket('${def.bucket}').select(${def.fields.map((f) => `'${f}'`).join(',')}).limit(5000).offset(${offset}).run()`;
+    const data = await fetchCached(`${g.wiki}?action=bucket&format=json&query=${encodeURIComponent(query)}`, 24 * 3600e3);
+    if (data?.error) throw new UpstreamError(502, 'Wiki-bucket: ' + (typeof data.error === 'string' ? data.error : JSON.stringify(data.error)).slice(0, 120));
+    const part = data?.bucket || [];
+    rows.push(...part);
+    if (part.length < 5000) break;
+  }
+  res.json({ rows, fields: def.fields });
+}));
+
+// ---------- kaart: actuele tegelversie + lijst met kaarten ----------
+const MAPS = {
+  osrs: { probe: 'Lumbridge', re: /maps\.runescape\.wiki\/osrs\/versions\/([^/]+)\//, base: 'https://maps.runescape.wiki/osrs/versions/' },
+  rs3: { probe: 'Lumbridge', re: /maps\.runescape\.wiki\/rs\/versions\/([^/]+)\//, base: 'https://maps.runescape.wiki/rs/versions/' },
+};
+app.get('/api/:game/map', wrap(async (req, res) => {
+  const g = gameOf(req);
+  const m = MAPS[req.params.game];
+  const page = await fetchCached(`${g.wiki}?action=parse&format=json&formatversion=2&prop=text&page=${encodeURIComponent(m.probe)}`, 6 * 3600e3);
+  const version = (page?.parse?.text || '').match(m.re)?.[1];
+  if (!version) throw new UpstreamError(502, 'Kaartversie niet gevonden');
+  const basemaps = await fetchCached(`${m.base}${version}/basemaps.json`, 24 * 3600e3);
+  res.json({
+    version,
+    tiles: req.params.game === 'osrs' ? `${m.base}${version}/tiles/rendered/{mapId}/{z}/{p}_{x}_{y}.png` : `${m.base}${version}/map_squares/{mapId}/{z}/{p}_{x}_{y}.png`,
+    iconTiles: req.params.game === 'rs3' ? `${m.base}${version}/map_icon_squares/{mapId}/{z}/{p}_{x}_{y}.png` : null,
+    zoom: req.params.game === 'osrs' ? { min: -3, max: 3 } : { min: -2, max: 3 },
+    basemaps: (Array.isArray(basemaps) ? basemaps : []).map((b) => ({ mapId: b.mapId, name: b.name, bounds: b.bounds, center: b.center })),
+  });
+}));
+
+// ---------- quest-startpunten voor de kaart ----------
+// Uit de wikitekst van elke quest: OSRS "|startmap = x,y[,plane]", RS3 "|start_path = {{Map|mapID=..|plane=..|x=..|y=..}}".
+function parseQuestStart(wt) {
+  let m = wt.match(/\|\s*startmap\s*=\s*([^\n|]+)/i);
+  let pos = null;
+  if (m) {
+    const n = m[1].match(/-?\d+/g)?.map(Number) || [];
+    if (n.length >= 2) pos = { x: n[0], y: n[1], plane: n[2] ?? 0, mapId: -1 };
+  }
+  if (!pos) {
+    m = wt.match(/\|\s*start_path\s*=\s*\{\{\s*Map(?:link)?\s*\|([^}]*)\}\}/i) || wt.match(/\|\s*start\s*=[^\n]*?\{\{\s*Map(?:link)?\s*\|([^}]*)\}\}/i);
+    if (m) {
+      const kv = Object.fromEntries([...m[1].matchAll(/(\w+)\s*=\s*(-?\d+)/g)].map((a) => [a[1].toLowerCase(), +a[2]]));
+      if (kv.x != null && kv.y != null) pos = { x: kv.x, y: kv.y, plane: kv.plane ?? 0, mapId: kv.mapid ?? -1 };
+    }
+  }
+  if (!pos) return null;
+  const st = (wt.match(/\|\s*start\s*=\s*([^\n]*)/i)?.[1] || '')
+    .replace(/\{\{\s*FloorNumber\s*\|\s*(\d+)[^}]*\}\}/gi, 'verdieping $1')
+    .replace(/\{\{[^}]*\}\}/g, '')
+    .replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g, '$1')
+    .replace(/'{2,}|<[^>]+>/g, '')
+    .trim();
+  return { ...pos, start: st.slice(0, 220) };
+}
+const questStartMemo = new Map();
+app.get('/api/:game/queststarts', wrap(async (req, res) => {
+  const g = gameOf(req);
+  const key = req.params.game;
+  const memo = questStartMemo.get(key);
+  if (memo && memo.exp > Date.now()) return res.json(memo.data);
+  let titles = [];
+  for (const cat of ['Category:Quests', 'Category:Miniquests']) {
+    let cont = '';
+    for (let i = 0; i < 6; i++) {
+      const r = await fetchCached(`${g.wiki}?action=query&list=categorymembers&cmtitle=${encodeURIComponent(cat)}&cmnamespace=0&cmlimit=500&format=json&formatversion=2${cont}`, 24 * 3600e3);
+      titles.push(...(r?.query?.categorymembers || []).map((m) => m.title));
+      if (!r?.continue?.cmcontinue) break;
+      cont = '&cmcontinue=' + encodeURIComponent(r.continue.cmcontinue);
+    }
+  }
+  titles = [...new Set(titles)].filter((t) => !t.includes('/'));
+  const quests = [];
+  for (let i = 0; i < titles.length; i += 50) {
+    const batch = titles.slice(i, i + 50);
+    const j = await fetchCached(`${g.wiki}?action=query&prop=revisions&rvprop=content&rvslots=main&format=json&formatversion=2&titles=${encodeURIComponent(batch.join('|'))}`, 60e3);
+    for (const p of j?.query?.pages || []) {
+      const s = parseQuestStart(p.revisions?.[0]?.slots?.main?.content || '');
+      if (s) quests.push({ title: p.title, ...s });
+    }
+  }
+  const data = { quests, checked: titles.length };
+  if (quests.length) questStartMemo.set(key, { exp: Date.now() + 24 * 3600e3, data });
+  res.json(data);
+}));
+
 // ---------- speler ----------
 // Zelfde correcties als de questchecker van de RS3 Wiki: naam uit de sync-data -> wiki-paginanaam
 const RS3_QUEST_FIX = {
@@ -185,6 +298,8 @@ app.get('/api/:game/player/:name', wrap(async (req, res) => {
         for (const [n, lvl] of Object.entries(v.levels)) out.skills.push({ name: n, level: lvl, xp: null, rank: null });
       }
       out.syncedAt = v.timestamp || null;
+      // Achievement diaries: { Regio: { Easy: { complete, tasks: [bool] }, ... } }
+      if (v.achievement_diaries && typeof v.achievement_diaries === 'object') out.diaries = v.achievement_diaries;
     }
   } else {
     const [hs, sync, rm, rq] = await Promise.all([
@@ -245,7 +360,7 @@ app.get('/api/:game/player/:name', wrap(async (req, res) => {
 }));
 
 // ---------- lokale opslag ----------
-const STORE_KEYS = new Set(['settings', 'watchlist', 'journal', 'goals', 'history', 'quests']);
+const STORE_KEYS = new Set(['settings', 'watchlist', 'journal', 'goals', 'history', 'quests', 'sessions', 'portfolio', 'paper']);
 let writeChain = Promise.resolve();
 
 app.get('/api/store/:key', wrap(async (req, res) => {

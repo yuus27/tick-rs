@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../lib/store.jsx';
+import { useSession } from '../pages/Sessions.jsx';
 import { searchWiki } from '../lib/wiki.js';
 import { Icon, SkillIcon } from './ui.jsx';
 import { href, navigate, wikiHref } from '../lib/router.js';
@@ -100,6 +101,7 @@ export default function Topbar() {
         )}
       </div>
       <div className="grow" />
+      <SessionPill />
       {upd?.status === 'ready' && <button className="btn sm primary" onClick={() => window.tick.update.install()} title="Herstart tick. om de update te installeren"><Icon name="spark" size={14} /> Update {upd.version}: herstart</button>}
       {upd?.status === 'downloading' && <span className="tag acc" title="Update wordt gedownload">Update {upd.version} · {upd.progress}%</span>}
       <span className="tag line">{cfg.label}</span>
@@ -113,4 +115,14 @@ export default function Topbar() {
       </button>
     </div>
   );
+}
+
+function SessionPill() {
+  const { active, start, rsn } = useSession();
+  const [, force] = useState(0);
+  useEffect(() => { if (!active) return; const t = setInterval(() => force((x) => x + 1), 30000); return () => clearInterval(t); }, [active]);
+  if (!rsn) return null;
+  if (!active) return <button className="btn sm ghost" onClick={start} title="Start een sessie: tick. meet je XP, levels, quests en GE-winst"><Icon name="clock" size={14} /> Start sessie</button>;
+  const m = Math.round((Date.now() - active.startedAt) / 60000);
+  return <a className="btn sm" href="#/sessions" title="Bekijk je lopende sessie"><span className="dot live" /> Sessie {m >= 60 ? `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}` : `${m} min`}</a>;
 }

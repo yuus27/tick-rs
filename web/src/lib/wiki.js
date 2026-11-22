@@ -2,6 +2,7 @@ import DOMPurify from 'dompurify';
 import { wikiApi } from './api.js';
 import { GAMES } from './games.js';
 import { normTitle } from './format.js';
+import { mapHref } from './map.js';
 
 // ---------- API ----------
 export async function parsePage(game, title, extra = {}) {
@@ -103,6 +104,24 @@ export function toDoc(game, html) {
     } else if (/^https?:/.test(h)) {
       a.setAttribute('target', '_blank');
       a.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
+
+  // "Show on map"-links en kaartjes van de wiki openen de ingebouwde kaart
+  root.querySelectorAll('a.mw-kartographer-maplink, a.mw-kartographer-map, .mw-kartographer-map').forEach((a) => {
+    const x = Number(a.getAttribute('data-lon')), y = Number(a.getAttribute('data-lat'));
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    const ctx = (a.closest('td, li, p, dd') || a.parentElement)?.textContent.replace(/show on map/gi, '').replace(/\s+/g, ' ').trim().slice(0, 90);
+    const url = mapHref({ x, y, plane: Number(a.getAttribute('data-plane')) || 0, mapId: Number(a.getAttribute('data-mapid') ?? -1), zoom: a.getAttribute('data-zoom'), label: ctx || undefined });
+    if (a.classList.contains('mw-kartographer-maplink')) {
+      a.setAttribute('href', url);
+      a.classList.add('tk-maplink');
+    } else {
+      const card = doc.createElement('a');
+      card.className = 'tk-mapcard';
+      card.setAttribute('href', url);
+      card.innerHTML = '<span>Kaart</span><b>' + x + ', ' + y + '</b>';
+      a.replaceWith(card);
     }
   });
 

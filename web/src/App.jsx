@@ -20,6 +20,9 @@ import Play from './pages/Play.jsx';
 import Radar from './pages/Radar.jsx';
 import Market from './pages/Market.jsx';
 import Diag from './pages/Diag.jsx';
+import Sessions from './pages/Sessions.jsx';
+import Diaries from './pages/Diaries.jsx';
+import MapView from './pages/MapView.jsx';
 import Watcher from './components/Watcher.jsx';
 
 class Boundary extends Component {
@@ -45,6 +48,9 @@ function View({ route }) {
     case 'tools': return <Tools />;
     case 'settings': return <Settings />;
     case 'diag': return <Diag />;
+    case 'sessions': return <Sessions />;
+    case 'diaries': return <Diaries />;
+    case 'map': return <MapView query={route.query} />;
     default: return <div className="page"><div className="card"><ErrorBox error={new Error('Pagina bestaat niet')} /></div></div>;
   }
 }

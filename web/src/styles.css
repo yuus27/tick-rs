@@ -328,3 +328,47 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .desktop .top { padding-right: 160px; -webkit-app-region: drag; }
 .desktop .top input, .desktop .top button, .desktop .top a, .desktop .top label, .desktop .suggest { -webkit-app-region: no-drag; }
 .desktop .side .brand { -webkit-app-region: drag; }
+
+/* ---------- wereldkaart ---------- */
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tk-mapwrap { position: relative; height: calc(100vh - 210px); min-height: 460px; border-radius: var(--r); overflow: hidden; border: 1px solid var(--line); background: #000; }
+.tk-mapwrap > .skel, .tk-mapwrap > [class*="skel"] { position: absolute; inset: 0; }
+.tk-map, .tk-map.leaflet-container { position: absolute; inset: 0; background: #05060a; font-family: var(--f-body); }
+.tk-map .leaflet-tile { image-rendering: pixelated; }
+.tk-map .leaflet-control-attribution { background: rgba(8,9,12,.75); color: var(--dim); font-size: 10.5px; border-radius: 8px 0 0 0; padding: 2px 8px; }
+.tk-map .leaflet-control-attribution a { color: var(--mut); }
+.tk-map .leaflet-bar { border: 1px solid var(--line2) !important; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+.tk-map .leaflet-bar a { background: var(--s2); color: var(--tx); border-bottom-color: var(--line2); width: 34px; height: 34px; line-height: 34px; }
+.tk-map .leaflet-bar a:hover { background: var(--s3); }
+.tk-mapctl { position: absolute; top: 14px; left: 14px; z-index: 500; width: 270px; gap: 10px; max-height: calc(100% - 28px); overflow: auto; }
+.tk-mapbox { background: rgba(16,19,24,.88); backdrop-filter: blur(10px); border: 1px solid var(--line2); border-radius: 16px; padding: 12px; box-shadow: 0 12px 32px rgba(0,0,0,.45); }
+.tk-mappick { width: 100%; background: var(--bg2); border: 1px solid var(--line2); border-radius: 12px; padding: 8px 12px; cursor: pointer; text-align: left; gap: 10px; color: var(--tx); }
+.tk-mappick:hover { border-color: var(--acc); }
+.tk-maplist { max-height: 240px; overflow: auto; gap: 2px; background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+.tk-maplist button { border: 0; background: none; text-align: left; padding: 7px 10px; border-radius: 8px; cursor: pointer; color: var(--tx2); font-size: 13px; }
+.tk-maplist button:hover { background: var(--s3); color: var(--tx); }
+.tk-maplist button.on { background: var(--acc-soft); color: var(--acc); }
+.tk-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 2px #0B0D11; }
+.tk-mapcoord { position: absolute; left: 14px; bottom: 14px; z-index: 500; display: flex; align-items: center; gap: 10px; background: rgba(16,19,24,.88); backdrop-filter: blur(10px); border: 1px solid var(--line2); border-radius: 12px; padding: 4px 4px 4px 12px; }
+.tk-pin { position: relative; }
+.tk-pin i { position: absolute; left: 4px; top: 0; width: 20px; height: 20px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--acc); box-shadow: 0 0 0 3px #0B0D11, 0 6px 16px rgba(0,0,0,.6); animation: tkDrop .5s var(--spring) both; }
+.tk-pin b { position: absolute; left: 9px; top: 30px; width: 10px; height: 6px; border-radius: 50%; background: var(--acc); opacity: .5; animation: tkPulse 1.8s ease-out infinite; }
+@keyframes tkDrop { from { transform: translateY(-24px) rotate(-45deg); opacity: 0; } to { transform: rotate(-45deg); opacity: 1; } }
+@keyframes tkPulse { from { transform: scale(1); opacity: .6; } to { transform: scale(4); opacity: 0; } }
+.tk-map .leaflet-popup-content-wrapper { background: var(--s2); color: var(--tx); border: 1px solid var(--line2); border-radius: 14px; box-shadow: 0 14px 36px rgba(0,0,0,.55); }
+.tk-map .leaflet-popup-tip { background: var(--s2); }
+.tk-map .leaflet-popup-content { margin: 12px 14px; font-family: var(--f-body); }
+.tk-pop { display: flex; flex-direction: column; gap: 5px; font-size: 13px; line-height: 1.45; }
+.tk-pop b { font-family: var(--f-head); font-size: 14.5px; }
+.tk-pop em { font-style: normal; font-size: 11.5px; font-weight: 600; }
+.tk-pop span { color: var(--tx2); }
+.tk-pop a { color: var(--acc); font-weight: 600; }
+.tk-map .leaflet-tooltip.tk-tip { background: var(--s3); color: var(--tx); border: 1px solid var(--line2); border-radius: 8px; box-shadow: none; font-size: 12px; padding: 3px 8px; }
+.tk-map .leaflet-tooltip.tk-tip::before { border-top-color: var(--line2); }
+.tk-maplink { cursor: pointer; }
+.tk-maplink::before { content: '⌖ '; }
+.tk-mapcard { display: inline-flex; flex-direction: column; gap: 2px; padding: 12px 16px; margin: 6px 0; border-radius: 14px; border: 1px solid var(--line2); background: linear-gradient(135deg, var(--acc-soft), transparent 70%), var(--s2); color: var(--tx); min-width: 180px; }
+.tk-mapcard span { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--acc); font-weight: 700; }
+.tk-mapcard b { font-family: var(--f-mono); font-size: 13px; }
+.tk-mapcard:hover { border-color: var(--acc); }
+@media (max-width: 720px) { .tk-mapctl { width: calc(100% - 28px); max-height: 45%; } }

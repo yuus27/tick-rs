@@ -14,8 +14,11 @@ const NAV = [
   { key: 'quests', label: 'Quests', icon: 'quest' },
   { key: 'skills', label: 'Skill guides', icon: 'skills' },
   { key: 'wiki', label: 'Wiki', icon: 'book' },
+  { key: 'map', label: 'Kaart', icon: 'map' },
   { key: 'money', label: 'Money-making', icon: 'coins' },
+  { key: 'diaries', label: 'Diaries', icon: 'star' },
   { key: 'goals', label: 'Doelen', icon: 'target' },
+  { key: 'sessions', label: 'Sessies', icon: 'clock' },
   { key: 'tools', label: 'Calculators', icon: 'calc' },
 ];
 

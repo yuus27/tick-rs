@@ -84,6 +84,21 @@ Welke paar levels openen de meeste quests en money-methodes? tick. rekent het ui
 
 Zoek met **Ctrl+K** in de OSRS- of RS3-wiki; elke link opent gewoon in tick.
 
+### 🗺️ Wereldkaart <sub>vanaf 0.5.0</sub>
+<img src="docs/screenshots/kaart.jpg" alt="Wereldkaart met quest-startpunten" width="100%">
+
+De kaart van de wiki, ingebouwd en altijd de nieuwste versie: de hele wereld plus alle kerkers en verdiepingen. Elke **"Show on map"**-link in tick. opent hier met een pin. Alle **quest-startpunten** staan erop, gekleurd naar jouw voortgang; klik er een aan voor het startpunt en de quest-gids.
+
+### 🏅 Achievement diaries <sub>vanaf 0.5.0 · OSRS</sub>
+<img src="docs/screenshots/diaries.jpg" alt="Achievement diaries: wat je nu kunt doen" width="100%">
+
+Alle diary-taken van de 12 regio's naast jouw levels, quests en voortgang (via WikiSync). tick. laat zien welke taken je **nu** kunt doen, welke je **bijna** kunt (een paar levels, of boostable), en welke tier je het snelst afrondt voor de beloning.
+
+### ⏱️ Sessies <sub>vanaf 0.5.0</sub>
+<img src="docs/screenshots/sessies.jpg" alt="Sessierapport met XP, levels, quests en GE-winst" width="100%">
+
+Klik op *Start sessie* als je gaat spelen. Na afloop zie je wat het opleverde: XP per skill, levels, voltooide quests en je GE-winst. Elke sessie wordt bewaard, zodat je ziet welke avonden het meest opleverden.
+
 ### En verder
 - **Dashboard** met je stats, beste flips, doelen en de laatste game-updates.
 - **Doelen** voor skills en quests, opgeknipt in stappen, met een streak.
@@ -126,7 +141,7 @@ De data komt inderdaad van de wiki en de game. Wat tick. toevoegt, is de **combi
 tick. leest alleen openbare data en verandert niets aan je game of client. Het is geen plugin en geen bot.
 
 **Wat gebeurt er met mijn data?**
-Alles blijft op je eigen pc (`%APPDATA%\tick\data`). Er is geen account, geen server van ons en geen tracking. tick. draait een kleine lokale server op `127.0.0.1` die alleen praat met een vaste lijst bronnen: de wiki's, de wiki-prijzen-API, de officiële hiscores en WikiSync.
+Alles blijft op je eigen pc (`%APPDATA%\tick\data`). Er is geen account, geen server van ons en geen tracking. tick. draait een kleine lokale server op `127.0.0.1` die alleen praat met een vaste lijst bronnen: de wiki's, de wiki-prijzen-API, de officiële hiscores en WikiSync. De kaarttegels komen rechtstreeks van de wikikaart (maps.runescape.wiki).
 
 **Werkt het op Mac of Linux?**
 De kant-en-klare app is er (nog) alleen voor Windows. Vanaf de broncode draait tick. overal waar Node.js draait (zie hieronder).
@@ -152,7 +167,8 @@ Verhoog `version` in `package.json` en push naar `main`. De workflow **Release**
 server/index.js     lokale server: allowlist-proxy, cache, opslag
 electron/           desktop-app: venster, tray, auto-update
 web/src/lib         games.js (OSRS/RS3-verschillen), wiki.js (parsen), intel.js + advisor.js (adviseur),
-                    mmg.js (money-making), market.js (GE), xp.js
+                    mmg.js (money-making), market.js (GE), xp.js, map.js (kaart),
+                    diaries.js (achievement diaries), session.js (sessierapport)
 web/src/pages       alle schermen
 docs/               screenshot-script
 ```
@@ -164,4 +180,4 @@ docs/               screenshot-script
 
 ---
 
-<sub>tick. is een fanproject en is niet gelieerd aan, gesponsord door of goedgekeurd door Jagex Ltd. RuneScape en Old School RuneScape zijn handelsmerken van Jagex Ltd. Wiki-inhoud is afkomstig van de [RuneScape Wiki](https://runescape.wiki) en de [Old School RuneScape Wiki](https://oldschool.runescape.wiki) (CC BY-NC-SA 3.0). Prijsdata via de [Real-time Prices API](https://prices.runescape.wiki).</sub>
+<sub>tick. is een fanproject en is niet gelieerd aan, gesponsord door of goedgekeurd door Jagex Ltd. RuneScape en Old School RuneScape zijn handelsmerken van Jagex Ltd. Wiki-inhoud is afkomstig van de [RuneScape Wiki](https://runescape.wiki) en de [Old School RuneScape Wiki](https://oldschool.runescape.wiki) (CC BY-NC-SA 3.0). Prijsdata via de [Real-time Prices API](https://prices.runescape.wiki). Kaarttegels van de wikikaart (Weird Gloop).</sub>

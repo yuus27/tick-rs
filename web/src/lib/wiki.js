@@ -55,7 +55,9 @@ export async function recentUpdates(game, limit = 6) {
 export const stripTags = (s = '') => s.replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&#039;/g, "'");
 
 // ---------- HTML opschonen ----------
-const DROP = ['.mw-editsection', '#toc', '.toc', '.noprint.navigation-not-searchable', '.mw-empty-elt', 'audio', 'video', '.reference-tooltip', '.rs-calc-placeholder', '.jcConfig', '.mw-references-wrap .mw-cite-backlink'];
+const DROP = ['.mw-editsection', '#toc', '.toc', '.noprint.navigation-not-searchable', '.mw-empty-elt', 'audio', 'video', '.reference-tooltip', '.rs-calc-placeholder', '.jcConfig', '.mw-references-wrap .mw-cite-backlink',
+  // verborgen wiki-data (bucket/SMW-rijen, league-vlaggen, alch-kolommen) die de wiki zelf met CSS verbergt
+  '.advanced-data', '.leagues-global-flag', '.rs-external-header-links', '.alch-column', '.navbox-group-title-hidden'];
 
 export function toDoc(game, html) {
   const clean = DOMPurify.sanitize(html, {

@@ -1,0 +1,82 @@
+{
+  "name": "tick-rs",
+  "private": true,
+  "version": "0.4.0",
+  "description": "tick. — persoonlijke OSRS + RS3 cockpit (wiki, quests, skill guides, GE-terminal)",
+  "type": "module",
+  "scripts": {
+    "dev": "node server/index.js --dev",
+    "build": "vite build",
+    "start": "node server/index.js",
+    "desktop": "vite build && electron .",
+    "dist": "vite build && electron-builder --win nsis portable --publish never",
+    "release:ci": "vite build && electron-builder --win nsis portable --publish always"
+  },
+  "dependencies": {
+    "dompurify": "^3.1.6",
+    "electron-updater": "^6.8.11",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@fontsource/inter": "^5.0.20",
+    "@fontsource/jetbrains-mono": "^5.0.20",
+    "@fontsource/space-grotesk": "^5.0.18",
+    "@vitejs/plugin-react": "^4.3.1",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "vite": "^5.4.2"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "main": "electron/main.mjs",
+  "build": {
+    "appId": "nl.sensei.tick",
+    "productName": "tick",
+    "copyright": "Fanproject · niet gelieerd aan Jagex",
+    "directories": {
+      "output": "release"
+    },
+    "asar": false,
+    "files": [
+      "electron/**",
+      "server/**",
+      "web/dist/**",
+      "build/icon.png",
+      "build/tray.png",
+      "package.json"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "tick",
+      "artifactName": "tick-setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "tick-portable-${version}.${ext}"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "yuus27",
+        "repo": "tick-rs",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yuus27/tick-rs.git"
+  },
+  "author": "yuus27"
+}

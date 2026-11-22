@@ -1,0 +1,337 @@
+// tick. — lokale server
+// - Bindt alleen op 127.0.0.1 (niet bereikbaar vanaf je netwerk)
+// - Proxy't uitsluitend naar vaste, allowlisted bronnen (geen open proxy)
+// - Zet een nette User-Agent zoals de RuneScape Wiki vraagt
+// - Cachet antwoorden in het geheugen en bewaart jouw data in ./data/*.json
+
+import express from 'express';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, '..');
+// In de desktop-app komt je data in de gebruikersmap van Windows (TICK_DATA_DIR)
+const DATA_DIR = process.env.TICK_DATA_DIR || path.join(ROOT, 'data');
+const DIST_DIR = path.join(ROOT, 'web', 'dist');
+const DEV = process.argv.includes('--dev');
+const HOST = '127.0.0.1';
+const PORT = Number(process.env.PORT) || 5177;
+
+// Pas dit aan met je eigen Discord-naam als je wilt; de wiki waardeert contactinfo.
+const USER_AGENT = process.env.TICK_UA || 'tick. (RSBuddy) - personal local OSRS/RS3 cockpit';
+
+const GAMES = {
+  osrs: {
+    prices: 'https://prices.runescape.wiki/api/v1/osrs',
+    wiki: 'https://oldschool.runescape.wiki/api.php',
+  },
+  rs3: {
+    prices: 'https://prices.runescape.wiki/api/v2/rs',
+    wiki: 'https://runescape.wiki/api.php',
+  },
+};
+
+const RS3_SKILLS = ['Overall', 'Attack', 'Defence', 'Strength', 'Constitution', 'Ranged', 'Prayer', 'Magic', 'Cooking', 'Woodcutting', 'Fletching', 'Fishing', 'Firemaking', 'Crafting', 'Smithing', 'Mining', 'Herblore', 'Agility', 'Thieving', 'Slayer', 'Farming', 'Runecrafting', 'Hunter', 'Construction', 'Summoning', 'Dungeoneering', 'Divination', 'Invention', 'Archaeology', 'Necromancy'];
+
+// ---------- cache ----------
+const cache = new Map();
+const inflight = new Map();
+const MAX_CACHE = 900;
+
+class UpstreamError extends Error {
+  constructor(status, message) { super(message); this.status = status; }
+}
+
+async function fetchCached(url, ttlMs, kind = 'json') {
+  const key = kind + ':' + url;
+  const hit = cache.get(key);
+  if (hit && hit.exp > Date.now()) return hit.data;
+  if (inflight.has(key)) return inflight.get(key);
+  const p = (async () => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 20000);
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT, Accept: kind === 'json' ? 'application/json' : 'text/plain' }, signal: ctrl.signal });
+      if (!res.ok) throw new UpstreamError(res.status, `Bron gaf ${res.status}`);
+      const data = kind === 'json' ? await res.json() : await res.text();
+      if (cache.size > MAX_CACHE) cache.delete(cache.keys().next().value);
+      cache.set(key, { exp: Date.now() + ttlMs, data });
+      return data;
+    } catch (e) {
+      if (hit) return hit.data; // verlopen cache is beter dan niets
+      if (e.name === 'AbortError') throw new UpstreamError(504, 'Time-out bij de bron');
+      throw e instanceof UpstreamError ? e : new UpstreamError(502, 'Bron niet bereikbaar');
+    } finally {
+      clearTimeout(t);
+      inflight.delete(key);
+    }
+  })();
+  inflight.set(key, p);
+  return p;
+}
+
+const app = express();
+app.disable('x-powered-by');
+app.use(express.json({ limit: '2mb' }));
+
+// Alleen verzoeken van deze machine accepteren (extra laag naast de 127.0.0.1-binding)
+app.use('/api', (req, res, next) => {
+  const host = (req.headers.host || '').split(':')[0];
+  if (!['127.0.0.1', 'localhost'].includes(host)) return res.status(403).json({ error: 'forbidden' });
+  next();
+});
+
+const wrap = (fn) => (req, res) => fn(req, res).catch((e) => {
+  res.status(e.status && e.status >= 400 ? e.status : 500).json({ error: e.message || 'Onbekende fout' });
+});
+
+function gameOf(req) {
+  const g = GAMES[req.params.game];
+  if (!g) throw new UpstreamError(400, 'Onbekende game');
+  return g;
+}
+
+// ---------- prijzen ----------
+const PRICE_TTL = { latest: 60e3, mapping: 6 * 3600e3, '5m': 60e3, '1h': 300e3, timeseries: 300e3 };
+app.get('/api/:game/prices/:ep', wrap(async (req, res) => {
+  const g = gameOf(req);
+  const ep = req.params.ep;
+  if (!PRICE_TTL[ep]) throw new UpstreamError(400, 'Onbekend endpoint');
+  const q = new URLSearchParams();
+  const { id, timestep, lookback, timestamp } = req.query;
+  if (id !== undefined) { if (!/^\d{1,7}$/.test(id)) throw new UpstreamError(400, 'id ongeldig'); q.set('id', id); }
+  if (timestep !== undefined) { if (!['5m', '1h', '6h', '24h'].includes(timestep)) throw new UpstreamError(400, 'timestep ongeldig'); q.set('timestep', timestep); }
+  if (lookback !== undefined) { if (!['6h', '24h', '7d', '30d', '6m', '1y'].includes(lookback)) throw new UpstreamError(400, 'lookback ongeldig'); q.set('lookback', lookback); }
+  if (timestamp !== undefined) { if (!/^\d{1,11}$/.test(timestamp)) throw new UpstreamError(400, 'timestamp ongeldig'); q.set('timestamp', timestamp); }
+  const qs = q.toString();
+  // historische uur-snapshots veranderen niet meer: lang cachen
+  const ttl = timestamp !== undefined ? 24 * 3600e3 : PRICE_TTL[ep];
+  const data = await fetchCached(`${g.prices}/${ep}${qs ? '?' + qs : ''}`, ttl);
+  res.set('Cache-Control', 'no-store').json(data);
+}));
+
+// ---------- wiki (MediaWiki API, alleen lezen) ----------
+const WIKI_PARAMS = new Set(['action', 'page', 'pageid', 'prop', 'section', 'redirects', 'titles', 'list', 'search', 'srsearch', 'srlimit', 'srsort', 'srnamespace', 'srwhat', 'limit', 'namespace', 'disableeditsection', 'disabletoc', 'cmtitle', 'cmlimit', 'cmtype', 'cmsort', 'cmdir', 'rvprop', 'rvslots', 'exintro', 'explaintext', 'pithumbsize', 'piprop', 'useskin', 'mobileformat']);
+const WIKI_ACTIONS = new Set(['parse', 'query', 'opensearch']);
+app.get('/api/:game/wiki', wrap(async (req, res) => {
+  const g = gameOf(req);
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(req.query)) {
+    if (!WIKI_PARAMS.has(k)) continue;
+    if (typeof v !== 'string' || v.length > 600) throw new UpstreamError(400, 'Parameter ongeldig');
+    q.set(k, v);
+  }
+  if (!WIKI_ACTIONS.has(q.get('action'))) throw new UpstreamError(400, 'Actie niet toegestaan');
+  q.set('format', 'json');
+  if (q.get('action') !== 'opensearch') q.set('formatversion', '2');
+  const ttl = q.get('action') === 'parse' ? 30 * 60e3 : 10 * 60e3;
+  const data = await fetchCached(`${g.wiki}?${q.toString()}`, ttl);
+  res.json(data);
+}));
+
+// ---------- speler ----------
+// Zelfde correcties als de questchecker van de RS3 Wiki: naam uit de sync-data -> wiki-paginanaam
+const RS3_QUEST_FIX = {
+  'Finale': 'Once Upon a Time in Gielinor: Finale',
+  'Flashback': 'Once Upon a Time in Gielinor: Flashback',
+  'Foreshadowing': 'Once Upon a Time in Gielinor: Foreshadowing',
+  'Fortunes': 'Once Upon a Time in Gielinor: Fortunes',
+  'Father and Son': 'Father and Son (miniquest)',
+  'Helping Laniakea': 'Helping Laniakea (miniquest)',
+  'My One and Only Lute': 'That Old Black Magic: My One and Only Lute',
+  'Skelly By Everlight': 'That Old Black Magic: Skelly By Everlight',
+  'Flesh and Bone': 'That Old Black Magic: Flesh and Bone',
+  'Hermy and Bass': 'That Old Black Magic: Hermy and Bass',
+};
+const NAME_RE = /^[A-Za-z0-9 _-]{1,12}$/;
+
+async function settle(p) {
+  try { return { ok: true, value: await p }; } catch (e) { return { ok: false, error: e.message, status: e.status }; }
+}
+
+app.get('/api/:game/player/:name', wrap(async (req, res) => {
+  const game = req.params.game;
+  gameOf(req);
+  const name = String(req.params.name || '').trim();
+  if (!NAME_RE.test(name)) throw new UpstreamError(400, 'Ongeldige RSN');
+  const enc = encodeURIComponent(name);
+  const out = { game, name, skills: [], total: null, quests: null, questSource: null, activities: [], sources: {}, fetchedAt: Date.now() };
+
+  if (game === 'osrs') {
+    const [hs, sync] = await Promise.all([
+      settle(fetchCached(`https://secure.runescape.com/m=hiscore_oldschool/index_lite.json?player=${enc}`, 120e3)),
+      settle(fetchCached(`https://sync.runescape.wiki/runelite/player/${enc}/STANDARD`, 120e3)),
+    ]);
+    out.sources.hiscores = hs.ok ? 'ok' : (hs.status === 404 ? 'niet gevonden' : 'fout');
+    out.sources.wikisync = sync.ok ? 'ok' : (sync.status === 404 ? 'geen WikiSync-data' : 'fout');
+    if (hs.ok && Array.isArray(hs.value.skills)) {
+      for (const s of hs.value.skills) {
+        const row = { name: s.name, level: Math.max(1, s.level), xp: Math.max(0, s.xp), rank: s.rank };
+        if (s.name === 'Overall') out.total = { level: row.level, xp: row.xp, rank: row.rank };
+        else out.skills.push(row);
+      }
+      out.activities = (hs.value.activities || []).filter((a) => a.score > 0).map((a) => ({ name: a.name, score: a.score, rank: a.rank }));
+    }
+    if (sync.ok && sync.value) {
+      const v = sync.value;
+      if (v.quests) {
+        out.quests = {};
+        for (const [title, st] of Object.entries(v.quests)) out.quests[title] = st === 2 ? 'done' : st === 1 ? 'started' : 'none';
+        out.questSource = 'WikiSync';
+      }
+      if (!out.skills.length && v.levels) {
+        for (const [n, lvl] of Object.entries(v.levels)) out.skills.push({ name: n, level: lvl, xp: null, rank: null });
+      }
+      out.syncedAt = v.timestamp || null;
+    }
+  } else {
+    const [hs, sync, rm, rq] = await Promise.all([
+      settle(fetchCached(`https://secure.runescape.com/m=hiscore/index_lite.ws?player=${enc}`, 120e3, 'text')),
+      settle(fetchCached(`https://sync.runescape.wiki/runescape/player/${enc}/STANDARD`, 120e3)),
+      settle(fetchCached(`https://apps.runescape.com/runemetrics/profile/profile?user=${enc}&activities=20`, 120e3)),
+      settle(fetchCached(`https://apps.runescape.com/runemetrics/quests?user=${enc}`, 300e3)),
+    ]);
+    out.sources.hiscores = hs.ok ? 'ok' : (hs.status === 404 ? 'niet gevonden' : 'fout');
+    out.sources.wikisync = sync.ok && sync.value?.quests ? 'ok' : (sync.status === 400 || sync.status === 404 ? 'geen WikiSync-data' : 'fout');
+    out.sources.runemetrics = rm.ok && !rm.value.error ? 'ok' : 'offline';
+    if (hs.ok) {
+      const lines = hs.value.trim().split('\n');
+      RS3_SKILLS.forEach((sk, i) => {
+        const parts = (lines[i] || '').split(',').map(Number);
+        if (parts.length < 3) return;
+        const row = { name: sk, rank: parts[0], level: Math.max(1, parts[1]), xp: Math.max(0, parts[2]) };
+        if (sk === 'Overall') out.total = { level: row.level, xp: row.xp, rank: row.rank };
+        else out.skills.push(row);
+      });
+    }
+    if (rm.ok && !rm.value.error) {
+      const v = rm.value;
+      out.combat = v.combatlevel;
+      out.activities = (v.activities || []).map((a) => ({ date: a.date, text: a.text, details: a.details }));
+      if (!out.skills.length && Array.isArray(v.skillvalues)) {
+        for (const s of v.skillvalues) {
+          const nm = RS3_SKILLS[s.id + 1];
+          if (nm) out.skills.push({ name: nm, level: s.level, xp: Math.floor(s.xp / 10), rank: s.rank });
+        }
+        out.total = { level: v.totalskill, xp: v.totalxp, rank: null };
+      }
+    }
+    if (sync.ok && sync.value?.quests) {
+      const v = sync.value;
+      out.quests = {};
+      for (const [title, st] of Object.entries(v.quests)) {
+        const val = st === 2 ? 'done' : st === 1 ? 'started' : 'none';
+        out.quests[RS3_QUEST_FIX[title] || title] = val;
+      }
+      out.questSource = 'WikiSync';
+      out.syncedAt = v.timestamp || null;
+      if (Array.isArray(v.ach)) out.achievements = v.ach.length;
+      if (typeof v.im === 'boolean') out.ironman = v.im;
+      if (!out.skills.length && v.levels) {
+        for (const [n, lvl] of Object.entries(v.levels)) out.skills.push({ name: n, level: lvl, xp: null, rank: null });
+      }
+    } else if (rq.ok && Array.isArray(rq.value.quests)) {
+      out.quests = {};
+      for (const q of rq.value.quests) out.quests[q.title] = q.status === 'COMPLETED' ? 'done' : q.status === 'STARTED' ? 'started' : 'none';
+      out.questSource = 'RuneMetrics';
+      out.questPoints = rq.value.quests.filter((q) => q.status === 'COMPLETED').reduce((a, q) => a + (q.questPoints || 0), 0);
+    }
+  }
+  if (!out.total && out.skills.length) out.total = { level: out.skills.reduce((a, s) => a + (s.level || 0), 0), xp: null, rank: null };
+  if (!out.skills.length && !out.quests) throw new UpstreamError(404, 'Speler niet gevonden in hiscores of sync-bronnen');
+  res.set('Cache-Control', 'no-store').json(out);
+}));
+
+// ---------- lokale opslag ----------
+const STORE_KEYS = new Set(['settings', 'watchlist', 'journal', 'goals', 'history', 'quests']);
+let writeChain = Promise.resolve();
+
+app.get('/api/store/:key', wrap(async (req, res) => {
+  const key = req.params.key;
+  if (!STORE_KEYS.has(key)) throw new UpstreamError(400, 'Onbekende sleutel');
+  try {
+    const txt = await fs.readFile(path.join(DATA_DIR, key + '.json'), 'utf8');
+    res.json(JSON.parse(txt));
+  } catch {
+    res.json(null);
+  }
+}));
+
+app.put('/api/store/:key', wrap(async (req, res) => {
+  const key = req.params.key;
+  if (!STORE_KEYS.has(key)) throw new UpstreamError(400, 'Onbekende sleutel');
+  const body = JSON.stringify(req.body ?? null, null, 2);
+  writeChain = writeChain.then(async () => {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    const file = path.join(DATA_DIR, key + '.json');
+    const tmp = file + '.tmp';
+    await fs.writeFile(tmp, body, 'utf8');
+    await fs.rename(tmp, file);
+  });
+  await writeChain;
+  res.json({ ok: true });
+}));
+
+// ---------- Flipping Utilities (RuneLite) ----------
+// Leest alleen de vaste map ~/.runelite/flipping; geen andere paden.
+app.get('/api/import/flipping', wrap(async (req, res) => {
+  const dir = path.join(os.homedir(), '.runelite', 'flipping');
+  let names = [];
+  try { names = (await fs.readdir(dir)).filter((f) => f.toLowerCase().endsWith('.json')); } catch { return res.json({ dir, files: [] }); }
+  const files = [];
+  for (const f of names.slice(0, 20)) {
+    const fp = path.join(dir, f);
+    try {
+      const st = await fs.stat(fp);
+      if (!st.isFile() || st.size > 60e6) continue;
+      files.push({ file: f, size: st.size, mtime: st.mtimeMs, data: JSON.parse(await fs.readFile(fp, 'utf8')) });
+    } catch { files.push({ file: f, error: 'onleesbaar' }); }
+  }
+  res.json({ dir, files });
+}));
+
+app.get('/api/health', (req, res) => res.json({ ok: true, dev: DEV, desktop: !!process.env.TICK_DESKTOP }));
+app.use('/api', (req, res) => res.status(404).json({ error: 'Niet gevonden' }));
+
+// ---------- frontend ----------
+let frontendReady = false;
+async function mountFrontend() {
+  if (frontendReady) return;
+  frontendReady = true;
+  if (DEV) {
+    const { createServer } = await import('vite');
+    const vite = await createServer({ root: path.join(ROOT, 'web'), configFile: path.join(ROOT, 'vite.config.js'), server: { middlewareMode: true }, appType: 'spa' });
+    app.use(vite.middlewares);
+  } else {
+    try {
+      await fs.access(path.join(DIST_DIR, 'index.html'));
+    } catch {
+      throw new Error('Geen build gevonden. Draai eerst: npm run build');
+    }
+    app.use(express.static(DIST_DIR, { index: false, maxAge: '1h' }));
+    app.get('*', (req, res) => res.sendFile(path.join(DIST_DIR, 'index.html')));
+  }
+}
+
+// Start de server; probeert de volgende poort als deze bezet is.
+export async function startServer({ port = PORT, tries = 10 } = {}) {
+  await mountFrontend();
+  for (let p = port; p < port + tries; p++) {
+    const server = await new Promise((resolve, reject) => {
+      const srv = app.listen(p, HOST);
+      srv.once('listening', () => resolve(srv));
+      srv.once('error', (e) => (e.code === 'EADDRINUSE' ? resolve(null) : reject(e)));
+    });
+    if (server) return { port: p, server };
+  }
+  throw new Error(`Geen vrije poort gevonden vanaf ${port}`);
+}
+
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+if (isMain) {
+  startServer().then(({ port }) => {
+    console.log(`\n  tick. draait op  http://localhost:${port}   ${DEV ? '(dev)' : ''}\n  Sluit dit venster om te stoppen.\n`);
+  }).catch((e) => { console.error('\n  ' + e.message + '\n'); process.exit(1); });
+}

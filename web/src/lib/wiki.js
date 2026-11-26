@@ -334,6 +334,15 @@ export function questStatus(playerQuests, title) {
     const nk = normTitle(k);
     if (nk === n || nk === n2) return v;
   }
+  // De wiki noemt sommige quests "X (quest)" omdat "X" al een andere pagina is (bv. Tears of Guthix,
+  // Raksha, the Shadow Colossus); WikiSync gebruikt dan de kale naam. Vergelijk ook zonder dat achtervoegsel.
+  const bare = (x) => normTitle(x.replace(/\s*\((?:quest|miniquest|saga)\)\s*$/i, ''));
+  const b = bare(title);
+  if (b !== n2) {
+    for (const [k, v] of Object.entries(playerQuests)) if (bare(k) === b) return v;
+  } else {
+    for (const [k, v] of Object.entries(playerQuests)) if (k !== title && bare(k) === b) return v;
+  }
   return null;
 }
 

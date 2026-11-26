@@ -74,6 +74,7 @@ export default function Topbar() {
   let lastGrp = null;
   return (
     <div className="top">
+      <NavButtons />
       <div className="search" ref={box}>
         <label className="search-box">
           <Icon name="search" size={17} style={{ color: 'var(--mut)' }} />
@@ -128,4 +129,45 @@ function SessionPill() {
   if (!active) return <button className="btn sm ghost" onClick={start} title="Start een sessie: tick. meet je XP, levels, quests en GE-winst"><Icon name="clock" size={14} /> Start sessie</button>;
   const m = Math.round((Date.now() - active.startedAt) / 60000);
   return <a className="btn sm" href="#/sessions" title="Bekijk je lopende sessie"><span className="dot live" /> Sessie {m >= 60 ? `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}` : `${m} min`}</a>;
+}
+
+// Algemene terug/vooruit-knoppen (de desktop-app heeft geen browserknoppen). Ook Alt+←/→ en de duimknoppen van je muis.
+function NavButtons() {
+  const nav = typeof window !== 'undefined' ? window.navigation : null;
+  const read = () => ({ back: nav ? nav.canGoBack : window.history.length > 1, fwd: nav ? nav.canGoForward : false });
+  const [can, setCan] = useState(read);
+  useEffect(() => {
+    const upd = () => setTimeout(() => setCan(read()), 0);
+    const key = (e) => {
+      if (!e.altKey || e.ctrlKey || e.metaKey) return;
+      if (e.key === 'ArrowLeft') { e.preventDefault(); window.history.back(); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); window.history.forward(); }
+    };
+    const mouse = (e) => {
+      if (e.button === 3) { e.preventDefault(); window.history.back(); }
+      if (e.button === 4) { e.preventDefault(); window.history.forward(); }
+    };
+    window.addEventListener('hashchange', upd);
+    window.addEventListener('popstate', upd);
+    // In de browser doen Alt+← en de muisknoppen dit al zelf; alleen in de desktop-app toevoegen
+    const desktop = !!window.tick?.desktop;
+    if (desktop) {
+      window.addEventListener('keydown', key);
+      window.addEventListener('mouseup', mouse);
+    }
+    upd();
+    return () => {
+      window.removeEventListener('hashchange', upd);
+      window.removeEventListener('popstate', upd);
+      window.removeEventListener('keydown', key);
+      window.removeEventListener('mouseup', mouse);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <div className="navbtns">
+      <button className="btn sm icon" onClick={() => window.history.back()} disabled={!can.back} aria-label="Terug" title="Terug (Alt+←)"><Icon name="back" size={16} /></button>
+      <button className="btn sm icon" onClick={() => window.history.forward()} disabled={!can.fwd} aria-label="Vooruit" title="Vooruit (Alt+→)"><Icon name="arrow" size={16} /></button>
+    </div>
+  );
 }

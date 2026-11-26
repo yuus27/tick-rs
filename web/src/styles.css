@@ -431,3 +431,7 @@ details.path-notes[open] summary { margin-bottom: 6px; }
 .path-sec.open { padding-bottom: 10px; }
 .path-sec.open > .col { padding: 0 10px; }
 .tag.ok.soft { opacity: .75; }
+
+/* ---------- terug/vooruit ---------- */
+.navbtns { display: inline-flex; gap: 4px; flex: none; }
+.navbtns .btn:disabled { opacity: .35; cursor: default; transform: none; }

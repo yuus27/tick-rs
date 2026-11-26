@@ -32,6 +32,7 @@ Het resultaat: geen tien browsertabs en zelf eisen vergelijken meer. Je krijgt a
 | *"Wat is mijn volgende stap?"* | Een wiki-gids van honderden stappen en zelf bijhouden waar je bent | tick. vinkt af wat je al hebt gedaan en zet je volgende stap bovenaan |
 | *"Waar begint deze quest?"* | "Show on map" in de browser, zelf zoeken | Klik in tick. en de ingebouwde kaart opent met een pin, met alle quest-startpunten erbij |
 | *"Welke diary-taken kan ik al?"* | Per regio 4 tiers aan taken naast je stats leggen | Alle 492 taken gecheckt: wat nu kan, wat bijna kan en welke tier het dichtstbij is |
+| *"Kan een AI me helpen met míjn account?"* | Een chatbot die RuneScape-feiten verzint en je account niet kent | Koppel je eigen AI aan tick.: hij leest je stats, quests en de wiki en rekent met tick.'s eigen logica |
 | *"Wat heb ik vanavond eigenlijk bereikt?"* | Zelf XP en levels bijhouden | Start een sessie en zie na afloop je XP, levels, quests en GE-winst |
 
 > **Geen bot.** tick. leest alleen openbare data (wiki, hiscores, WikiSync) en doet niets in de game.
@@ -108,6 +109,13 @@ Alle diary-taken van de 12 regio's naast jouw levels, quests en voortgang (via W
 
 Klik op *Start sessie* als je gaat spelen. Na afloop zie je wat het opleverde: XP per skill, levels, voltooide quests en je GE-winst. Elke sessie wordt bewaard, zodat je ziet welke avonden het meest opleverden.
 
+### 🤖 AI-koppeling (MCP) <sub>vanaf 0.4.6</sub>
+Koppel je eigen AI-app aan tick. Een AI zoals **Claude Desktop** kan dan je tick.-data lezen en daarmee antwoorden geven die kloppen voor jouw account, in plaats van RuneScape-feiten te verzinnen. Voorbeeldvragen: *"Wat is mijn volgende stap?"*, *"Welke money-makers kan ik met mijn stats doen?"* of *"Welke diary-taken kan ik nu halen?"*.
+
+- **9 functies, alleen lezen:** je account (levels, XP, quests, diaries), quests per status, de wiki doorzoeken en lezen, live GE-prijzen, money-making voor jouw stats, diary-taken en je stappenplan.
+- **Eén klik:** *Instellingen → AI-koppeling → Koppel aan Claude Desktop*. tick. vindt zelf waar Claude zijn instellingen bewaart (ook bij nieuwere versies) en maakt eerst een back-up. Andere AI-apps koppel je met de configuratie die tick. laat zien, via stdio of via een URL met sleutel.
+- **Veilig:** staat standaard uit, werkt alleen op je eigen pc (127.0.0.1), vereist een geheime sleutel en kan niets aanpassen. tick. hoeft niet open te staan: de AI-app start tick. zo nodig op de achtergrond.
+
 ### En verder
 - **Dashboard** met je stats, beste flips, doelen en de laatste game-updates.
 - **Doelen** voor skills en quests, opgeknipt in stappen, met een streak.
@@ -177,7 +185,10 @@ server/index.js     lokale server: allowlist-proxy, cache, opslag
 electron/           desktop-app: venster, tray, auto-update
 web/src/lib         games.js (OSRS/RS3-verschillen), wiki.js (parsen), intel.js + advisor.js (adviseur),
                     mmg.js (money-making), market.js (GE), xp.js, map.js (kaart),
-                    diaries.js (achievement diaries), session.js (sessierapport)
+                    diaries.js (achievement diaries), session.js (sessierapport), pathway.js (stappenplan)
+  server/mcp.js     AI-koppeling (MCP): gereedschap voor AI-apps, alleen lezen
+  server/ai/        rekenfuncties van de app, gebundeld voor Node (happy-dom)
+  electron/mcp-bridge.cjs  brug tussen een AI-app (stdio) en tick.
 web/src/pages       alle schermen
 docs/               screenshot-script
 ```

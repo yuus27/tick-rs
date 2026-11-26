@@ -22,6 +22,8 @@ app.setAppUserModelId('nl.sensei.tick');
 const USER = app.getPath('userData');
 process.env.TICK_DATA_DIR = path.join(USER, 'data');
 process.env.TICK_DESKTOP = '1';
+// Gestart door de AI-koppeling (MCP-brug): alleen op de achtergrond in de tray, zonder venster
+const START_HIDDEN = process.argv.includes('--hidden');
 
 let win = null;
 let tray = null;
@@ -80,7 +82,7 @@ async function createWindow() {
   });
   if (saved.maximized) win.maximize();
   if (saved.onTop) win.setAlwaysOnTop(true, 'floating');
-  win.once('ready-to-show', () => win.show());
+  win.once('ready-to-show', () => { if (!START_HIDDEN) win.show(); });
 
   const base = `http://localhost:${port}`;
   win.loadURL(base);

@@ -72,6 +72,99 @@ function UpdateCard() {
   );
 }
 
+// AI-koppeling (MCP): laat een AI-app zoals Claude Desktop je tick.-data lezen
+const mcpApi = (url, body) => fetch(url, { method: body ? 'POST' : 'GET', headers: { 'X-Tick': '1', ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined })
+  .then(async (r) => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || `Fout ${r.status}`); return j; });
+
+function McpCard() {
+  const { toast } = useApp();
+  const [info, setInfo] = useState(null);
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [show, setShow] = useState(false);
+  const [done, setDone] = useState(null);
+  const [file, setFile] = useState('');
+  const load = () => mcpApi('/api/mcp/info').then(setInfo, (e) => setErr(e.message));
+  useEffect(() => { load(); }, []);
+  if (err) return <section className="card"><span className="small down">AI-koppeling niet beschikbaar: {err}</span></section>;
+  if (!info) return null;
+  const set = async (body, msg) => {
+    setBusy(true);
+    try { await mcpApi('/api/mcp/config', body); await load(); if (msg) toast(msg, 'ok'); } catch (e) { toast(e.message, 'warn'); }
+    setBusy(false);
+  };
+  const installClaude = async (customFile) => {
+    setBusy(true);
+    try {
+      const r = await mcpApi('/api/mcp/install/claude', customFile ? { file: customFile } : {});
+      await load();
+      setDone(r.written);
+      toast('Gekoppeld aan Claude Desktop. Sluit Claude helemaal af (ook in de tray) en open hem opnieuw.', 'ok');
+    } catch (e) { toast(e.message, 'warn'); }
+    setBusy(false);
+  };
+  const stdio = JSON.stringify({ mcpServers: { tick: info.stdio } }, null, 2);
+  const http = JSON.stringify({ url: info.url, headers: { Authorization: `Bearer ${info.token}` } }, null, 2);
+  const copy = (t, what) => navigator.clipboard?.writeText(t).then(() => toast(`${what} gekopieerd`, 'ok'));
+  return (
+    <section className="card col" style={{ gap: 12 }}>
+      <div className="row wrap between" style={{ gap: 12 }}>
+        <div className="col" style={{ gap: 2, maxWidth: 640 }}>
+          <h3 className="h">AI-koppeling (MCP) <span className="tag acc" style={{ marginLeft: 6 }}>NIEUW</span></h3>
+          <span className="small muted">Laat een AI-app zoals Claude Desktop je tick.-data lezen: je account, quests, de wiki, GE-prijzen, money-making, diaries en je stappenplan. De AI kan alleen lezen, niets aanpassen, en alleen op deze pc.</span>
+        </div>
+        <Toggle on={info.enabled} onChange={(v) => set({ enabled: v }, v ? 'AI-koppeling staat aan' : 'AI-koppeling staat uit')} label="AI-koppeling" />
+      </div>
+      {info.enabled && (
+        <>
+          <div className="row wrap" style={{ gap: 8 }}>
+            <button className="btn primary" disabled={busy || !info.claudeFound} onClick={() => installClaude()} title={info.claudeFound ? `Schrijft naar ${info.claudeTargets.join(', ')}` : 'Claude Desktop is niet gevonden op deze pc'}>
+              <Icon name="spark" size={15} /> Koppel aan Claude Desktop
+            </button>
+            <button className="btn ghost" onClick={() => setShow((v) => !v)}>{show ? 'Verberg' : 'Andere AI-app'} <Icon name={show ? 'minus' : 'plus'} size={14} /></button>
+          </div>
+          {done && (
+            <div className="col small" style={{ gap: 2 }}>
+              <span className="up">✓ tick. staat nu in:</span>
+              {done.map((f) => <code key={f} className="mono dim" style={{ wordBreak: 'break-all' }}>{f}</code>)}
+              <span className="dim">Sluit Claude Desktop helemaal af (rechtsklik op het icoon in de tray → Afsluiten) en open hem opnieuw.</span>
+            </div>
+          )}
+          {!done && info.claudeFound && <span className="small dim">tick. koppelt aan: <code className="mono" style={{ wordBreak: 'break-all' }}>{info.claudeTargets.join(', ')}</code></span>}
+          {!info.claudeFound && <span className="small dim">Claude Desktop is niet automatisch gevonden. Vul hieronder zelf het pad naar claude_desktop_config.json in, of kies “Andere AI-app”.</span>}
+          {!info.bundle && <span className="small down">Een deel van de AI-functies ontbreekt in deze installatie (money-making, diaries, stappenplan, prijzen). Draai rebuild-tick.bat of installeer de nieuwste versie.</span>}
+          {show && (
+            <div className="col" style={{ gap: 10 }}>
+              <div className="col" style={{ gap: 6 }}>
+                <b className="small">Claude Desktop staat ergens anders?</b>
+                <div className="row" style={{ gap: 8 }}>
+                  <input className="input grow" style={{ height: 36 }} placeholder="Pad naar claude_desktop_config.json" value={file} onChange={(e) => setFile(e.target.value)} />
+                  <button className="btn sm" disabled={busy || !file.trim()} onClick={() => installClaude(file)}>Koppel</button>
+                </div>
+                <span className="small dim">Tip: zoek in Verkenner in AppData naar claude_desktop_config.json en kopieer het pad (Shift + rechtsklik → Kopiëren als pad).</span>
+              </div>
+              <div className="col" style={{ gap: 6 }}>
+                <div className="row between"><b className="small">Voor apps met een MCP-configbestand (stdio), zoals Claude Desktop</b><button className="btn sm ghost" onClick={() => copy(stdio, 'Configuratie')}><Icon name="plus" size={12} /> Kopieer</button></div>
+                <pre className="mcp-code">{stdio}</pre>
+                <span className="small dim">{info.stdio.env ? 'tick. hoeft niet open te staan: de AI-app start tick. zelf op de achtergrond als dat nodig is.' : 'In de browserversie moet tick. (start-tick.bat) draaien terwijl je de AI gebruikt.'}</span>
+              </div>
+              <div className="col" style={{ gap: 6 }}>
+                <div className="row between"><b className="small">Voor apps die een MCP-URL met header ondersteunen (Streamable HTTP)</b><button className="btn sm ghost" onClick={() => copy(http, 'URL en sleutel')}><Icon name="plus" size={12} /> Kopieer</button></div>
+                <pre className="mcp-code">{http}</pre>
+                <span className="small dim">Werkt alleen terwijl tick. draait. De poort kan veranderen als 5180 bezet is.</span>
+              </div>
+            </div>
+          )}
+          <div className="row wrap between small" style={{ gap: 8 }}>
+            <span className="dim">{info.tools.length} functies: {info.tools.map((t) => t.title).join(' · ')}</span>
+            <button className="btn sm ghost" disabled={busy} onClick={() => set({ newToken: true }, 'Nieuwe sleutel gemaakt. Koppel je AI-app opnieuw.')} title="Maakt de oude sleutel ongeldig"><Icon name="refresh" size={12} /> Nieuwe sleutel</button>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 export default function Settings() {
   const { settings, update, toast, journal, goals, watchlist, history } = useApp();
   const askNotify = async (on) => {
@@ -131,6 +224,7 @@ export default function Settings() {
         </div>
       </section>
       {window.tick?.desktop && <UpdateCard />}
+      <McpCard />
       <section className="card col" style={{ gap: 10 }}>
         <div className="row wrap between">
           <div className="col" style={{ gap: 2 }}><h3 className="h">Diagnose</h3><span className="small muted">Test of tick. de wiki, prijzen en je account goed uitleest.</span></div>

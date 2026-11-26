@@ -9,6 +9,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import fss from 'node:fs';
+import { setupMcp } from './mcp.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -408,6 +410,10 @@ app.get('/api/import/flipping', wrap(async (req, res) => {
 }));
 
 app.get('/api/health', (req, res) => res.json({ ok: true, dev: DEV, desktop: !!process.env.TICK_DESKTOP }));
+
+// ---------- AI-koppeling (MCP) ----------
+const PKG_VERSION = (() => { try { return JSON.parse(fss.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version; } catch { return '0'; } })();
+const mcp = setupMcp({ app, DATA_DIR, ROOT, version: PKG_VERSION });
 app.use('/api', (req, res) => res.status(404).json({ error: 'Niet gevonden' }));
 
 // ---------- frontend ----------
@@ -439,7 +445,7 @@ export async function startServer({ port = PORT, tries = 10 } = {}) {
       srv.once('listening', () => resolve(srv));
       srv.once('error', (e) => (e.code === 'EADDRINUSE' ? resolve(null) : reject(e)));
     });
-    if (server) return { port: p, server };
+    if (server) { await mcp.onListen(p); return { port: p, server }; }
   }
   throw new Error(`Geen vrije poort gevonden vanaf ${port}`);
 }

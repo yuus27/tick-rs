@@ -1,16 +1,16 @@
 {
   "name": "tick-rs",
   "private": true,
-  "version": "0.4.5",
+  "version": "0.4.6",
   "description": "tick. — persoonlijke OSRS + RS3 cockpit (wiki, quests, skill guides, GE-terminal)",
   "type": "module",
   "scripts": {
     "dev": "node server/index.js --dev",
-    "build": "vite build",
+    "build": "vite build && node scripts/build-ai.mjs",
     "start": "node server/index.js",
-    "desktop": "vite build && electron .",
-    "dist": "vite build && electron-builder --win nsis portable --publish never",
-    "release:ci": "vite build && electron-builder --win nsis portable --publish always"
+    "desktop": "npm run build && electron .",
+    "dist": "npm run build && electron-builder --win nsis portable --publish never",
+    "release:ci": "npm run build && electron-builder --win nsis portable --publish always"
   },
   "dependencies": {
     "dompurify": "^3.1.6",
@@ -24,6 +24,8 @@
     "@vitejs/plugin-react": "^4.3.1",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
+    "esbuild": "^0.28.2",
+    "happy-dom": "^21.0.4",
     "leaflet": "^1.9.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

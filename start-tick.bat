@@ -18,6 +18,18 @@ if not exist node_modules (
   if errorlevel 1 ( pause & exit /b 1 )
 )
 
+if not exist node_modules\happy-dom (
+  echo   Nieuwe pakketten installeren...
+  call npm install --no-audit --no-fund
+  if errorlevel 1 ( pause & exit /b 1 )
+)
+
+if not exist server\ai\tick-ai.bundle.mjs (
+  echo   App bouwen...
+  call npm run build
+  if errorlevel 1 ( pause & exit /b 1 )
+)
+
 if not exist web\dist\index.html (
   echo   App bouwen...
   call npm run build

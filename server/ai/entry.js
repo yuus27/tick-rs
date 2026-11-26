@@ -9,7 +9,7 @@ import { loadMethods } from '../../web/src/lib/intel.js';
 import { judgeMethod, methodDetails, pool } from '../../web/src/lib/mmg.js';
 import { buildItems } from '../../web/src/lib/market.js';
 import { osrsCombat, rs3Combat } from '../../web/src/lib/xp.js';
-import { prices, storeGet } from './node-api.js';
+import { prices, storeGet, wikiApi } from './node-api.js';
 
 const win = new Window();
 globalThis.DOMParser = win.DOMParser;
@@ -108,6 +108,9 @@ export async function pathwayNext(game, player, { guide = null, count = 5 } = {}
 }
 
 // ---------- GE-prijzen ----------
+// Itemnaam → GE-item. Eerst exact, dan via de wiki (redirects zoals "Rune bar" → "Runite bar"), dan op losse woorden.
+// Staat de wikipagina er wel maar het item niet in de prijsdata, dan is het (meestal) niet verhandelbaar.
+const TINY_MARGIN = 10; // gp per stuk: daaronder zegt ROI weinig
 export async function gePrices(game, names = []) {
   const [m, l, h] = await Promise.all([
     prices(game, 'mapping', {}, 6 * 3600e3),
@@ -117,18 +120,60 @@ export async function gePrices(game, names = []) {
   const settings = (await storeGet('settings')) || {};
   const items = buildItems(game, unwrap(m) || [], unwrap(l) || {}, unwrap(h) || {}, settings);
   const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
-  return names.slice(0, 25).map((q) => {
-    const n = norm(q);
-    const it = items.find((i) => norm(i.name) === n) || items.filter((i) => norm(i.name).includes(n)).sort((a, b) => (b.vol || 0) - (a.vol || 0))[0];
-    if (!it) return { query: q, found: false };
-    return {
+  const byNorm = new Map(items.map((i) => [norm(i.name), i]));
+  const exact = (q) => byNorm.get(norm(q));
+  const words = (q) => {
+    const ws = String(q).toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 1);
+    if (!ws.length) return null;
+    return items.filter((i) => { const n = i.name.toLowerCase(); return ws.every((w) => n.includes(w)); }).sort((a, b) => (b.vol || 0) - (a.vol || 0))[0] || null;
+  };
+  const pageTitle = async (q) => {
+    try {
+      const r = await wikiApi(game, { action: 'query', titles: String(q).slice(0, 200), redirects: '1' }, 24 * 3600e3);
+      return (r?.query?.pages || []).find((p) => !p.missing && !p.invalid)?.title || null;
+    } catch { return null; }
+  };
+  const searchTitle = async (q) => {
+    try { return (await wikiApi(game, { action: 'opensearch', search: String(q).slice(0, 200), limit: '1' }, 24 * 3600e3))?.[1]?.[0] || null; } catch { return null; }
+  };
+  const out = [];
+  for (const q of names.slice(0, 25)) {
+    let it = exact(q);
+    let via = null;
+    let page = null;
+    if (!it) { // wiki-redirect, bv. "Rune bar" → "Runite bar"
+      page = await pageTitle(q);
+      if (page && (it = exact(page) || exact(page.replace(/\s*\(.*\)\s*$/, '')))) via = page;
+    }
+    if (!it) it = words(q); // losse woorden, bv. "nature" → Nature rune
+    if (!it) { // laatste poging: zoekfunctie van de wiki, alleen als die precies op een GE-item uitkomt
+      const t = await searchTitle(q);
+      if (t && (it = exact(t))) via = t;
+    }
+    if (!it) {
+      out.push(page
+        ? { query: q, found: false, wikiPage: page, note: 'This page exists on the wiki but has no Grand Exchange price: the item is most likely not tradeable on the GE (e.g. made by combining items, or untradeable). Check its components on the wiki page.' }
+        : { query: q, found: false, note: 'No item with this name. Try search_wiki to find the exact item name.' });
+      continue;
+    }
+    const cap = Math.min(it.limit || Infinity, Math.max(0, Math.round((it.vol || 0) * 4)));
+    const tiny = it.margin != null && Math.abs(it.margin) < TINY_MARGIN;
+    out.push({
       query: q, item: it.name, id: it.id, members: it.members,
+      ...(via && norm(via) !== norm(q) ? { matchedVia: `wiki: "${q}" is "${via}"` } : norm(it.name) !== norm(q) ? { matchedVia: `name contains "${q}"` } : {}),
       instantBuy: it.high, instantSell: it.low,
       geTax: it.tax, marginAfterTax: it.margin, roiPct: it.roi != null ? Math.round(it.roi * 100) / 100 : null,
-      buyLimit: it.limit, volumeLastHour: it.vol, highAlch: it.highalch,
+      buyLimit: it.limit, volumeLastHour: it.vol,
+      maxProfitPerBuyLimit: it.margin != null && Number.isFinite(cap) ? it.margin * cap : null,
+      highAlch: it.highalch,
       lastTradeMinutesAgo: Number.isFinite(it.age) && it.age < 1e8 ? Math.round(it.age / 60) : null,
-    };
-  });
+      ...(tiny ? { warning: `Tiny margin (${it.margin} gp per item): the ROI percentage looks high but is meaningless here. Judge by maxProfitPerBuyLimit instead.` } : {}),
+    });
+  }
+  return {
+    note: 'maxProfitPerBuyLimit = margin after tax × what you can realistically buy in one 4-hour buy-limit window (buy limit, capped by ~4h of volume). Use it, not ROI, to compare flips: a 1 gp margin is 100% ROI on a 1 gp item.',
+    prices: out,
+  };
 }
 
 export { combatOf, levelsOf };

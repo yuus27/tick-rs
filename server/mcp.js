@@ -314,12 +314,12 @@ export function setupMcp({ app, DATA_DIR, ROOT, version }) {
     {
       name: 'get_ge_prices',
       title: 'Grand Exchange prices',
-      description: 'Live Grand Exchange prices (RuneScape Wiki real-time prices) for up to 25 items by name: instant buy/sell, GE tax, margin after tax, buy limit and hourly volume.',
+      description: 'Live Grand Exchange prices (RuneScape Wiki real-time prices) for up to 25 items by name: instant buy/sell, GE tax, margin after tax, buy limit, hourly volume and the realistic profit per buy-limit window. Item names are resolved via the wiki (e.g. "Rune bar" → Runite bar); items without a GE price are reported as most likely untradeable. Compare flips by maxProfitPerBuyLimit, not by ROI.',
       inputSchema: { type: 'object', properties: { game: GAME_ENUM, items: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 25 } }, required: ['items'], additionalProperties: false },
       async run(a) {
         const game = await gameOf(a);
         const A = await loadAi();
-        return { game, prices: await A.gePrices(game, (a.items || []).map(String)) };
+        return { game, ...(await A.gePrices(game, (a.items || []).map(String))) };
       },
     },
     {

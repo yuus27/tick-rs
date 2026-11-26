@@ -7,6 +7,9 @@ import { nl, short, pct, ago } from '../lib/format.js';
 import { wikiHref } from '../lib/router.js';
 import FUImport from '../components/FUImport.jsx';
 
+const ROI_MIN_MARGIN = 10; // gp per stuk
+const ROI_MIN_PROFIT = 25_000; // gp per buy limit
+
 const PRESETS = [
   ['flips', 'Beste flips'],
   ['volume', 'Hoog volume'],
@@ -140,6 +143,8 @@ export default function GE({ query }) {
       if (preset === 'watch') r = r.filter((i) => watchIds.has(i.id));
     }
     if (maxIn) r = r.filter((i) => i.low != null && i.low <= maxIn);
+    // ROI zegt niets bij items van een paar gp (1 gp marge op 1 gp = 100%): bij sorteren op ROI alleen items met echte winst
+    if (sort === 'roi') r = r.filter((i) => i.margin >= ROI_MIN_MARGIN && i.profit >= ROI_MIN_PROFIT);
     const key = preset === 'alch' && !term && sort === 'profit' ? 'alch' : sort;
     return [...r].sort((a, b) => (b[key] ?? -Infinity) - (a[key] ?? -Infinity)).slice(0, 150);
   }, [items, q, preset, sort, budget, watchIds.size, natureLow, game]);
@@ -156,6 +161,7 @@ export default function GE({ query }) {
 
   const selItem = sel != null ? byId[sel] : null;
   const loading = !m.mapping && !m.error;
+  const roiHidden = sort === 'roi';
   const head = (k, l) => <th className={`r sort ${sort === k ? 'on' : ''}`} onClick={() => setSort(k)}>{l}{sort === k ? ' ↓' : ''}</th>;
 
   return (
@@ -192,6 +198,7 @@ export default function GE({ query }) {
           </div>
         </div>
         {m.error && <ErrorBox error={m.error} />}
+        {roiHidden && !loading && <div className="small dim" style={{ padding: '10px 16px 0' }}>Bij sorteren op ROI verbergt tick. items met minder dan {ROI_MIN_MARGIN} gp marge of {short(ROI_MIN_PROFIT)} winst per limiet: daar is een hoge ROI misleidend.</div>}
         {loading && <div style={{ padding: 16 }}><SkelRows n={10} h={42} /></div>}
         {!loading && !rows.length && <Empty icon="chart" title="Geen items">{preset === 'watch' ? 'Open een item en klik op Watch.' : 'Pas je filter aan.'}</Empty>}
         {!!rows.length && (

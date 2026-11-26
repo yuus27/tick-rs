@@ -171,7 +171,7 @@ export default function Dashboard() {
           </div>
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(172px, 1fr))', gap: 10 }}>
             {skills.map((s, i) => (
-              <a key={s.name} href={href('skills', s.name)} className="skill-tile rise" style={delay(i, 0.4, 0.02)}>
+              <a key={s.name} href={href('skills', s.name)} className="skill-tile rise" style={delay(i, 0.4, 0.02)} title={s.xp != null ? (s.level < skillMax(game, s.name) ? `${s.name}: ${nl(Math.max(0, xpFor(s.level + 1, s.name) - s.xp))} XP tot level ${s.level + 1}` : `${s.name}: ${nl(s.xp)} / 200.000.000 XP`) : s.name}>
                 <div className="row between" style={{ gap: 8 }}>
                   <span className="row" style={{ gap: 8, fontSize: 13, color: 'var(--tx2)', minWidth: 0 }}><SkillIcon skill={s.name} size={18} /><span className="trunc">{s.name}</span></span>
                   <span className="num" style={{ flex: 'none', fontSize: s.level >= 100 ? 17 : 19, color: s.level >= skillMax(game, s.name) ? 'var(--acc)' : undefined }}>{s.level}</span>

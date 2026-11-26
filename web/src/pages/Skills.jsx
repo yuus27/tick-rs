@@ -19,7 +19,8 @@ export default function Skills() {
       const cap = skillMax(game, name);
       const toCap = xp != null ? Math.max(0, xpFor(cap, name) - xp) : null;
       const maxed = level != null && level >= cap;
-      return { name, i, level, xp, cap, toCap, maxed, prog: xp != null ? progressToNext(xp, level, name, cap) : maxed ? 1 : 0, f2p: cfg.f2p.includes(name) };
+      const toNext = xp != null && !maxed && level != null ? Math.max(0, xpFor(level + 1, name) - xp) : null;
+      return { name, i, level, xp, cap, toCap, maxed, toNext, prog: xp != null ? progressToNext(xp, level, name, cap) : maxed ? 1 : 0, f2p: cfg.f2p.includes(name) };
     });
     if (sort === 'low') r.sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
     if (sort === 'close') r.sort((a, b) => (b.prog || 0) - (a.prog || 0));
@@ -61,7 +62,7 @@ export default function Skills() {
               </div>
               <span className="num" style={{ flex: 'none', fontSize: r.level >= 100 ? 24 : 28, color: r.maxed ? 'var(--acc)' : 'var(--tx)' }}>{r.level ?? '–'}{r.cap > 99 && <span className="dim" style={{ fontSize: 13 }}>/{r.cap}</span>}</span>
             </div>
-            <Bar value={r.prog} color={SKILL_COLORS[r.name]} />
+            <Bar value={r.prog} color={SKILL_COLORS[r.name]} label={r.toNext != null ? `${nl(r.toNext)} XP tot ${r.level + 1}` : r.maxed && r.xp != null ? `${short(r.xp)} / 200M XP` : null} />
             <div className="row between small">
               <span className="dim">{r.maxed ? (r.xp >= MAX_XP ? '200M XP · helemaal gemaxt' : r.xp != null ? `Gemaxt · ${short(r.xp)} / 200M XP` : 'Gemaxt') : r.toCap != null ? `${short(r.toCap)} XP tot ${r.cap}` : `Bekijk de 1–${r.cap} route`}</span>
               <Icon name="arrow" size={15} style={{ color: 'var(--dim)' }} />

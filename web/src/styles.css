@@ -187,6 +187,9 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 
 .bar { height: 6px; border-radius: 6px; background: var(--s3); overflow: hidden; }
 .bar > i { display: block; height: 100%; border-radius: inherit; background: var(--acc); transform-origin: left; animation: growx 1.1s var(--ease) both; transition: width .7s var(--ease); }
+.bar.big { position: relative; height: 20px; border-radius: 8px; }
+.bar.big > i { position: absolute; inset: 0 auto 0 0; opacity: .9; }
+.bar.big > span { position: relative; display: flex; align-items: center; justify-content: center; height: 100%; padding: 0 8px; font: 600 11px/1 var(--f-mono); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.9), 0 0 6px rgba(0,0,0,.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @keyframes growx { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
 .skel { position: relative; overflow: hidden; background: var(--s2); border-radius: 10px; }

@@ -170,8 +170,10 @@ export function Ring({ value = 0, size = 150, stroke = 12, children, color = 'va
   );
 }
 
-export function Bar({ value, color }) {
-  return <div className="bar"><i style={{ width: `${Math.max(0, Math.min(1, value)) * 100}%`, background: color }} /></div>;
+export function Bar({ value, color, label }) {
+  const w = `${Math.max(0, Math.min(1, value || 0)) * 100}%`;
+  if (label) return <div className="bar big" title={label}><i style={{ width: w, background: color }} /><span>{label}</span></div>;
+  return <div className="bar"><i style={{ width: w, background: color }} /></div>;
 }
 
 // ---------- afbeeldingen met fallback ----------

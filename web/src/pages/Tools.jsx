@@ -4,6 +4,7 @@ import { Icon, PageHead, CountUp, delay, SkillIcon } from '../components/ui.jsx'
 import { nl, short } from '../lib/format.js';
 import { xpFor, levelFor, osrsCombat } from '../lib/xp.js';
 import BuyVsGrind from '../components/BuyVsGrind.jsx';
+import { goalMax } from '../lib/games.js';
 
 function Stepper({ label, value, set, min = 1, max = 99 }) {
   return (
@@ -21,7 +22,7 @@ function Stepper({ label, value, set, min = 1, max = 99 }) {
 }
 
 function XpCalc() {
-  const { cfg, player } = useApp();
+  const { cfg, player, game } = useApp();
   const [skill, setSkill] = useState(cfg.skills.includes('Prayer') ? 'Prayer' : cfg.skills[0]);
   const s = (player.data?.skills || []).find((x) => x.name === skill);
   const [cur, setCur] = useState(null);
@@ -30,9 +31,9 @@ function XpCalc() {
   const [cost, setCost] = useState('');
   const [rate, setRate] = useState('');
   const fromLvl = cur ?? s?.level ?? 1;
-  const fromXp = cur == null && s?.xp != null ? s.xp : xpFor(fromLvl);
-  const t = Math.max(fromLvl + 1, tgt);
-  const need = Math.max(0, xpFor(t) - fromXp);
+  const fromXp = cur == null && s?.xp != null ? s.xp : xpFor(fromLvl, skill);
+  const t = Math.min(goalMax(game, skill), Math.max(fromLvl + 1, tgt));
+  const need = Math.max(0, xpFor(t, skill) - fromXp);
   const actions = Number(per) > 0 ? Math.ceil(need / Number(per)) : null;
   const total = actions && Number(cost) ? actions * Number(cost) : null;
   const hours = Number(rate) > 0 ? need / Number(rate) : null;
@@ -47,8 +48,8 @@ function XpCalc() {
         </div>
       </div>
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-        <Stepper label={s && cur == null ? 'Huidig (hiscores)' : 'Huidig level'} value={fromLvl} set={setCur} max={98} />
-        <Stepper label="Doel-level" value={t} set={setTgt} min={2} />
+        <Stepper label={s && cur == null ? 'Huidig (hiscores)' : 'Huidig level'} value={fromLvl} set={setCur} max={goalMax(game, skill) - 1} />
+        <Stepper label="Doel-level" value={t} set={setTgt} min={2} max={goalMax(game, skill)} />
         <div className="card accent col" style={{ padding: 14, gap: 4 }}>
           <span className="small muted">XP nodig</span>
           <span className="num acc" style={{ fontSize: 28 }}><CountUp value={need} ms={600} /></span>

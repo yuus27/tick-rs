@@ -9,7 +9,7 @@ import { guideCandidates } from '../lib/games.js';
 import { parseRange } from './SkillGuide.jsx';
 import { Icon, PageHead, delay } from '../components/ui.jsx';
 
-const VERSION = '0.4.7';
+const VERSION = '0.4.8';
 const unwrap = (r) => (r && typeof r === 'object' && 'data' in r ? r.data : r);
 const keysOf = (o) => (o && typeof o === 'object' ? Object.keys(o).slice(0, 8) : []);
 
@@ -38,7 +38,7 @@ function buildTests(game, cfg, rsn) {
     ['Speler (hiscores + quests)', async () => {
       if (!rsn) return { warn: true, msg: 'geen RSN ingesteld' };
       const p = await playerApi(game, rsn);
-      return { ok: p.skills.length > 20, warn: !p.quests, msg: `${p.skills.length} skills · total ${p.total?.level} · quests: ${p.quests ? Object.keys(p.quests).length + ' via ' + p.questSource : 'geen'} · bronnen: ${JSON.stringify(p.sources)}` };
+      return { ok: p.skills.length > 20, warn: !p.quests || !String(p.sources?.hiscores || '').startsWith('ok'), msg: `${p.skills.length} skills · total ${p.total?.level} · quests: ${p.quests ? Object.keys(p.quests).length + ' via ' + p.questSource : 'geen'} · bronnen: ${JSON.stringify(p.sources)}` };
     }],
     ['Questlijst', async () => {
       const l = await questList(game);

@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { useAsync } from './api.js';
 import { resolveTitle, parsePage, toDoc, extractQuestDetails, questStatus, stripTags, myQuestPoints } from './wiki.js';
-import { GAMES, guideCandidates } from './games.js';
+import { GAMES, guideCandidates, skillMax } from './games.js';
 import { normTitle, nl, short } from './format.js';
 import { xpFor, levelFor, progressToNext } from './xp.js';
 import { LENGTH_MIN } from './intel.js';
@@ -225,7 +225,7 @@ export function computeAdvice({ game, intel, levels, skillsXp, questXp, prereq, 
       if (g.skills && Object.entries(g.skills).some(([k, l]) => lv(k) < l)) return false;
       return true;
     };
-    const xpOf = (s) => skillsXp[s] ?? xpFor(lv(s));
+    const xpOf = (s) => skillsXp[s] ?? xpFor(lv(s), s);
     const myQp = myQuestPoints(intel.list, questMap);
     const qx = questXp || {};
     const pq = prereq || {};
@@ -240,7 +240,7 @@ export function computeAdvice({ game, intel, levels, skillsXp, questXp, prereq, 
       const ups = [];
       for (const [s, x] of Object.entries(rewards)) {
         const from = lv(s);
-        const to = levelFor(xpOf(s) + x);
+        const to = Math.max(from, levelFor(xpOf(s) + x, s, skillMax(game, s)));
         if (to > from) {
           const opens = (radarBy[s] || []).filter((r) => r.to > from && r.to <= to).flatMap((r) => r.unlocks.filter((u) => u.level > from && u.level <= to));
           ups.push({ skill: s, from, to, xp: x, opens });
@@ -295,8 +295,9 @@ export function computeAdvice({ game, intel, levels, skillsXp, questXp, prereq, 
     // ---------- training ----------
     const trainBlock = (skill, target, why, extraScore = 0, opens = []) => {
       const cur = lv(skill);
+      if (target > skillMax(game, skill)) target = skillMax(game, skill);
       if (target <= cur || !gateOpen(skill)) return null;
-      const need = Math.max(0, xpFor(target) - xpOf(skill));
+      const need = Math.max(0, xpFor(target, skill) - xpOf(skill));
       const g = tr[skill];
       const step = g ? pickStep(g.steps, cur) : null;
       const xph = step?.xph || null;
@@ -326,9 +327,9 @@ export function computeAdvice({ game, intel, levels, skillsXp, questXp, prereq, 
     // bijna een level: snelle winst
     const levelUps = [];
     for (const s of player.data?.skills || []) {
-      if (s.level >= 99 || s.xp == null) continue;
-      const p = progressToNext(s.xp, s.level);
-      const need = xpFor(s.level + 1) - s.xp;
+      if (s.level >= skillMax(game, s.name) || s.xp == null) continue;
+      const p = progressToNext(s.xp, s.level, s.name, skillMax(game, s.name));
+      const need = xpFor(s.level + 1, s.name) - s.xp;
       if (p >= 0.8) levelUps.push({ skill: s.name, level: s.level + 1, p, need });
     }
     levelUps.sort((a, b) => b.p - a.p);

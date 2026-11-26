@@ -53,7 +53,7 @@ export default function Topbar() {
     const term = q.trim().toLowerCase();
     const out = [];
     if (term) {
-      cfg.skills.filter((s) => s.toLowerCase().startsWith(term)).slice(0, 3).forEach((s) => out.push({ grp: 'Skill guides', label: `${s} 1–99 guide`, to: href('skills', s), skill: s }));
+      cfg.skills.filter((s) => s.toLowerCase().startsWith(term)).slice(0, 3).forEach((s) => out.push({ grp: 'Skill guides', label: `${s} skill guide`, to: href('skills', s), skill: s }));
       PAGES.filter(([l]) => l.toLowerCase().includes(term)).slice(0, 3).forEach(([l, k]) => out.push({ grp: 'Naar', label: l, to: '#/' + k, icon: 'arrow' }));
     }
     res.forEach((r) => out.push({ grp: `Wiki · ${cfg.short}`, label: r.title, to: wikiHref(r.title), icon: 'book' }));

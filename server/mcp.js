@@ -112,6 +112,8 @@ export function setupMcp({ app, DATA_DIR, ROOT, version }) {
       bundle: fss.existsSync(path.join(ROOT, 'server', 'ai', 'tick-ai.bundle.mjs')),
       claudeFound: claudeConfigPaths().length > 0,
       claudeTargets: claudeConfigPaths().map((d) => path.join(d, 'claude_desktop_config.json')),
+      chatgptFound: chatgptFound(),
+      chatgptTarget: codexFile(),
       tools: TOOLS.map((t) => ({ name: t.name, title: t.title })),
     });
   });
@@ -150,6 +152,62 @@ export function setupMcp({ app, DATA_DIR, ROOT, version }) {
     }
     if (!state.enabled) { state.enabled = true; await save(); }
     res.json({ ok: true, written });
+  });
+
+  // ---------- ChatGPT-desktopapp (Codex-configuratie) ----------
+  // De ChatGPT-desktopapp deelt zijn MCP-servers met Codex: ~/.codex/config.toml (of $CODEX_HOME/config.toml).
+  const codexFile = () => path.join(process.env.CODEX_HOME || path.join(os.homedir(), '.codex'), 'config.toml');
+  const chatgptFound = () => {
+    if (fss.existsSync(path.dirname(codexFile()))) return true;
+    if (process.platform === 'win32') {
+      const localApp = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
+      try { if (fss.readdirSync(path.join(localApp, 'Packages')).some((d) => /^OpenAI\.(ChatGPT|Codex)/i.test(d))) return true; } catch { /* geen Packages */ }
+      return fss.existsSync(path.join(localApp, 'Programs', 'ChatGPT'));
+    }
+    if (process.platform === 'darwin') return fss.existsSync('/Applications/ChatGPT.app');
+    return false;
+  };
+  // TOML-string: letterlijk ('...') waar dat kan, anders met escapes
+  const tomlStr = (v) => (/['\r\n]/.test(v) ? `"${String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"` : `'${v}'`);
+  const tickToml = () => {
+    const c = clientConfig();
+    const lines = [
+      '# tick. – AI-koppeling (toegevoegd door tick.; opnieuw koppelen overschrijft dit blok)',
+      '[mcp_servers.tick]',
+      `command = ${tomlStr(c.command)}`,
+      `args = [${c.args.map(tomlStr).join(', ')}]`,
+      'startup_timeout_sec = 40',
+      'tool_timeout_sec = 120',
+    ];
+    if (c.env) lines.push('', '[mcp_servers.tick.env]', ...Object.entries(c.env).map(([k, v]) => `${k} = ${tomlStr(v)}`));
+    return lines.join('\n') + '\n';
+  };
+  // Haal bestaande tick-blokken weg ([mcp_servers.tick] en [mcp_servers.tick.*]) en laat de rest ongemoeid
+  const stripTick = (txt) => {
+    const out = [];
+    let skip = false;
+    for (const line of txt.split(/\r?\n/)) {
+      const h = line.match(/^\s*\[([^\]]+)\]\s*(#.*)?$/);
+      if (h) skip = /^mcp_servers\.("tick"|tick)(\.|$)/.test(h[1].trim());
+      if (!skip && !/^# tick\. – AI-koppeling/.test(line)) out.push(line);
+    }
+    return out.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd();
+  };
+  app.post('/api/mcp/install/chatgpt', async (req, res) => {
+    if (!guard(req)) return res.status(403).json({ error: 'forbidden' });
+    const file = codexFile();
+    let txt = '';
+    try {
+      txt = await fs.readFile(file, 'utf8');
+      await fs.writeFile(file + '.voor-tick.bak', txt, 'utf8');
+    } catch (e) {
+      if (e.code !== 'ENOENT') return res.status(500).json({ error: `Kon ${file} niet lezen (${e.message}). Er is niets aangepast.` });
+    }
+    const rest = stripTick(txt);
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    await fs.writeFile(file, (rest ? rest + '\n\n' : '') + tickToml(), 'utf8');
+    if (!state.enabled) { state.enabled = true; await save(); }
+    res.json({ ok: true, written: [file] });
   });
 
   // ---------- MCP zelf (Streamable HTTP, alleen JSON-antwoorden) ----------

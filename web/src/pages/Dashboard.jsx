@@ -7,7 +7,7 @@ import { Icon, CountUp, Ring, Bar, SkillIcon, ItemIcon, Skel, Empty, delay } fro
 import { href, wikiHref } from '../lib/router.js';
 import { nl, short, ago, greeting } from '../lib/format.js';
 import { progressToNext, osrsCombat, rs3Combat, xpFor } from '../lib/xp.js';
-import { SKILL_COLORS } from '../lib/games.js';
+import { SKILL_COLORS, skillMax } from '../lib/games.js';
 
 function Onboarding() {
   const { cfg, game, update, toast } = useApp();
@@ -47,12 +47,12 @@ export default function Dashboard() {
   const qTotal = p?.quests ? Object.keys(p.quests).length : null;
   const myGoals = (goals || []).filter((g) => g.game === game).slice(0, 4);
   const skills = p?.skills || [];
-  const closest = [...skills].filter((s) => s.level < 99 && s.xp != null).sort((a, b) => progressToNext(b.xp, b.level) - progressToNext(a.xp, a.level)).slice(0, 3);
+  const closest = [...skills].filter((s) => s.level < skillMax(game, s.name) && s.xp != null).sort((a, b) => progressToNext(b.xp, b.level, b.name, skillMax(game, b.name)) - progressToNext(a.xp, a.level, a.name, skillMax(game, a.name))).slice(0, 3);
   const recent = (history || []).filter((h) => h.game === game).slice(0, 5);
 
   const kpis = [
     ['Total level', p?.total?.level, (v) => nl(v), p?.total?.rank ? `rank ${nl(p.total.rank)}` : cfg.short],
-    ['Total XP', p?.total?.xp, (v) => short(v), p ? `${skills.filter((s) => s.level >= 99).length} skills op 99` : cfg.short],
+    ['Total XP', p?.total?.xp, (v) => short(v), p ? `${skills.filter((s) => s.level >= skillMax(game, s.name)).length} skills gemaxt` : cfg.short],
     ['Combat level', combat, (v) => nl(v), 'berekend uit je stats'],
     ['Quests voltooid', qDone, (v) => nl(v), qTotal ? `van ${qTotal} · ${p.questSource}` : qDone != null ? 'handmatig bijgehouden' : 'vink ze af op Quests'],
   ];
@@ -165,18 +165,18 @@ export default function Dashboard() {
           <div className="row wrap between" style={{ marginBottom: 14 }}>
             <div className="col" style={{ gap: 2 }}>
               <h2 className="h">Skills</h2>
-              <span className="small muted">Balk = voortgang naar volgend level · klik voor de 1–99 guide</span>
+              <span className="small muted">Balk = voortgang naar volgend level (gemaxt: naar 200M XP) · klik voor de skill guide</span>
             </div>
             {closest.length > 0 && <span className="small muted">Bijna level-up: {closest.map((c) => <b key={c.name} style={{ color: 'var(--tx)' }}> {c.name}</b>)}</span>}
           </div>
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(172px, 1fr))', gap: 10 }}>
             {skills.map((s, i) => (
               <a key={s.name} href={href('skills', s.name)} className="skill-tile rise" style={delay(i, 0.4, 0.02)}>
-                <div className="row between">
-                  <span className="row" style={{ gap: 8, fontSize: 13, color: 'var(--tx2)' }}><SkillIcon skill={s.name} size={18} />{s.name}</span>
-                  <span className="num" style={{ fontSize: 19, color: s.level >= 99 ? 'var(--acc)' : undefined }}>{s.level}</span>
+                <div className="row between" style={{ gap: 8 }}>
+                  <span className="row" style={{ gap: 8, fontSize: 13, color: 'var(--tx2)', minWidth: 0 }}><SkillIcon skill={s.name} size={18} /><span className="trunc">{s.name}</span></span>
+                  <span className="num" style={{ flex: 'none', fontSize: s.level >= 100 ? 17 : 19, color: s.level >= skillMax(game, s.name) ? 'var(--acc)' : undefined }}>{s.level}</span>
                 </div>
-                <Bar value={s.level >= 99 ? 1 : progressToNext(s.xp, s.level)} color={SKILL_COLORS[s.name]} />
+                <Bar value={s.xp == null && s.level >= skillMax(game, s.name) ? 1 : progressToNext(s.xp, s.level, s.name, skillMax(game, s.name))} color={SKILL_COLORS[s.name]} />
               </a>
             ))}
           </div>

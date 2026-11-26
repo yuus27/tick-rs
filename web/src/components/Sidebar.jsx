@@ -66,10 +66,10 @@ export default function Sidebar({ section }) {
           ['Hiscores', p ? (p.sources?.hiscores || '–') : rsn ? '…' : 'geen RSN'],
           ['WikiSync', p ? (p.sources?.wikisync || '–') : '–'],
         ].map(([a, b]) => (
-          <div key={a} className="row small" style={{ padding: '6px 10px', color: 'var(--tx2)' }}>
-            <span className={`dot ${b === 'live' || b === 'ok' ? 'live' : ''}`} style={{ background: b === 'live' || b === 'ok' ? 'var(--up)' : b === '…' ? 'var(--acc)' : 'var(--dim)' }} />
+          <div key={a} className="row small" style={{ padding: '6px 10px', color: 'var(--tx2)' }} title={String(b)}>
+            <span className={`dot ${b === 'live' || String(b).startsWith('ok') ? 'live' : ''}`} style={{ background: b === 'live' || String(b).startsWith('ok') ? 'var(--up)' : b === '…' ? 'var(--acc)' : String(b).startsWith('fout') ? 'var(--down)' : 'var(--dim)' }} />
             <span className="grow">{a}</span>
-            <span className="mono dim" style={{ fontSize: 11 }}>{b}</span>
+            <span className="mono dim" style={{ fontSize: 11 }}>{String(b).split(/[:(]/)[0].trim()}</span>
           </div>
         ))}
       </div>

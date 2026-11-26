@@ -40,7 +40,7 @@ function RsnField({ g }) {
       {test?.loading && <span className="small muted">Bezig met opzoeken…</span>}
       {test?.ok && (
         <div className="row wrap small" style={{ gap: 8 }}>
-          <span className="tag ok">Hiscores: {test.d.sources.hiscores}</span>
+          <span className={`tag ${String(test.d.sources.hiscores).startsWith('ok') ? 'ok' : ''}`}>Hiscores: {test.d.sources.hiscores}</span>
           {test.d.sources.wikisync && <span className={`tag ${test.d.sources.wikisync === 'ok' ? 'ok' : ''}`}>WikiSync: {test.d.sources.wikisync}</span>}
           {test.d.sources.runemetrics && <span className={`tag ${test.d.sources.runemetrics === 'ok' ? 'ok' : ''}`}>RuneMetrics: {test.d.sources.runemetrics}</span>}
         </div>
@@ -93,16 +93,18 @@ function McpCard() {
     try { await mcpApi('/api/mcp/config', body); await load(); if (msg) toast(msg, 'ok'); } catch (e) { toast(e.message, 'warn'); }
     setBusy(false);
   };
-  const installClaude = async (customFile) => {
+  const APPS = { claude: 'Claude Desktop', chatgpt: 'de ChatGPT-desktopapp' };
+  const install = async (client, customFile) => {
     setBusy(true);
     try {
-      const r = await mcpApi('/api/mcp/install/claude', customFile ? { file: customFile } : {});
+      const r = await mcpApi(`/api/mcp/install/${client}`, customFile ? { file: customFile } : {});
       await load();
-      setDone(r.written);
-      toast('Gekoppeld aan Claude Desktop. Sluit Claude helemaal af (ook in de tray) en open hem opnieuw.', 'ok');
+      setDone({ client, files: r.written });
+      toast(`Gekoppeld aan ${APPS[client]}. Sluit de app helemaal af (ook in de tray) en open hem opnieuw.`, 'ok');
     } catch (e) { toast(e.message, 'warn'); }
     setBusy(false);
   };
+  const installClaude = (f) => install('claude', f);
   const stdio = JSON.stringify({ mcpServers: { tick: info.stdio } }, null, 2);
   const http = JSON.stringify({ url: info.url, headers: { Authorization: `Bearer ${info.token}` } }, null, 2);
   const copy = (t, what) => navigator.clipboard?.writeText(t).then(() => toast(`${what} gekopieerd`, 'ok'));
@@ -111,7 +113,7 @@ function McpCard() {
       <div className="row wrap between" style={{ gap: 12 }}>
         <div className="col" style={{ gap: 2, maxWidth: 640 }}>
           <h3 className="h">AI-koppeling (MCP) <span className="tag acc" style={{ marginLeft: 6 }}>NIEUW</span></h3>
-          <span className="small muted">Laat een AI-app zoals Claude Desktop je tick.-data lezen: je account, quests, de wiki, GE-prijzen, money-making, diaries en je stappenplan. De AI kan alleen lezen, niets aanpassen, en alleen op deze pc.</span>
+          <span className="small muted">Laat een AI-app zoals Claude Desktop of de ChatGPT-desktopapp je tick.-data lezen: je account, quests, de wiki, GE-prijzen, money-making, diaries en je stappenplan. De AI kan alleen lezen, niets aanpassen, en alleen op deze pc.</span>
         </div>
         <Toggle on={info.enabled} onChange={(v) => set({ enabled: v }, v ? 'AI-koppeling staat aan' : 'AI-koppeling staat uit')} label="AI-koppeling" />
       </div>
@@ -121,17 +123,27 @@ function McpCard() {
             <button className="btn primary" disabled={busy || !info.claudeFound} onClick={() => installClaude()} title={info.claudeFound ? `Schrijft naar ${info.claudeTargets.join(', ')}` : 'Claude Desktop is niet gevonden op deze pc'}>
               <Icon name="spark" size={15} /> Koppel aan Claude Desktop
             </button>
+            <button className="btn primary" disabled={busy} onClick={() => install('chatgpt')} title={`Schrijft naar ${info.chatgptTarget}`}>
+              <Icon name="spark" size={15} /> Koppel aan ChatGPT
+            </button>
             <button className="btn ghost" onClick={() => setShow((v) => !v)}>{show ? 'Verberg' : 'Andere AI-app'} <Icon name={show ? 'minus' : 'plus'} size={14} /></button>
           </div>
           {done && (
             <div className="col small" style={{ gap: 2 }}>
-              <span className="up">✓ tick. staat nu in:</span>
-              {done.map((f) => <code key={f} className="mono dim" style={{ wordBreak: 'break-all' }}>{f}</code>)}
-              <span className="dim">Sluit Claude Desktop helemaal af (rechtsklik op het icoon in de tray → Afsluiten) en open hem opnieuw.</span>
+              <span className="up">✓ tick. staat nu in {done.client === 'chatgpt' ? 'de ChatGPT-desktopapp' : 'Claude Desktop'}:</span>
+              {done.files.map((f) => <code key={f} className="mono dim" style={{ wordBreak: 'break-all' }}>{f}</code>)}
+              <span className="dim">{done.client === 'chatgpt'
+                ? 'Sluit ChatGPT helemaal af en open hem opnieuw. tick staat dan onder Instellingen → MCP servers (je kunt daar ook op Restart klikken).'
+                : 'Sluit Claude Desktop helemaal af (rechtsklik op het icoon in de tray → Afsluiten) en open hem opnieuw.'}</span>
             </div>
           )}
-          {!done && info.claudeFound && <span className="small dim">tick. koppelt aan: <code className="mono" style={{ wordBreak: 'break-all' }}>{info.claudeTargets.join(', ')}</code></span>}
-          {!info.claudeFound && <span className="small dim">Claude Desktop is niet automatisch gevonden. Vul hieronder zelf het pad naar claude_desktop_config.json in, of kies “Andere AI-app”.</span>}
+          {!done && (
+            <div className="col small dim" style={{ gap: 2 }}>
+              {info.claudeFound && <span>Claude Desktop: <code className="mono" style={{ wordBreak: 'break-all' }}>{info.claudeTargets.join(', ')}</code></span>}
+              <span>ChatGPT-desktopapp: <code className="mono" style={{ wordBreak: 'break-all' }}>{info.chatgptTarget}</code>{!info.chatgptFound && ' (ChatGPT niet gevonden; het bestand wordt aangemaakt)'}</span>
+            </div>
+          )}
+          {!info.claudeFound && <span className="small dim">Claude Desktop is niet automatisch gevonden. Gebruik je Claude, vul dan onder “Andere AI-app” zelf het pad naar claude_desktop_config.json in.</span>}
           {!info.bundle && <span className="small down">Een deel van de AI-functies ontbreekt in deze installatie (money-making, diaries, stappenplan, prijzen). Draai rebuild-tick.bat of installeer de nieuwste versie.</span>}
           {show && (
             <div className="col" style={{ gap: 10 }}>

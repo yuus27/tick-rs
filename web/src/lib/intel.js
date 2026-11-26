@@ -187,8 +187,8 @@ export function computeIntel({ list, reqs, route, titles, questMap, levels, judg
     const radar = [];
     for (const [skill, arr] of Object.entries(bySkill)) {
       const cur = levels[skill] ?? 1;
-      const curXp = skillsXp[skill] ?? xpFor(cur);
-      const levelsSorted = [...new Set(arr.map((a) => a.level))].sort((a, b) => a - b).filter((l) => l <= 99);
+      const curXp = skillsXp[skill] ?? xpFor(cur, skill);
+      const levelsSorted = [...new Set(arr.map((a) => a.level))].sort((a, b) => a - b).filter((l) => l <= 120);
       const picks = new Set([levelsSorted[0]]);
       // grootste sprong binnen +10 levels van de eerste drempel
       let best = null;
@@ -200,7 +200,7 @@ export function computeIntel({ list, reqs, route, titles, questMap, levels, judg
       for (const L of picks) {
         if (L == null) continue;
         const unlocks = arr.filter((a) => a.level <= L).sort((a, b) => a.level - b.level);
-        const xp = Math.max(0, xpFor(L) - curXp);
+        const xp = Math.max(0, xpFor(L, skill) - curXp);
         const nq = unlocks.filter((u) => u.type === 'quest').length;
         const nm = unlocks.filter((u) => u.type === 'money').length;
         const score = (nq * 1 + nm * 0.8) / Math.pow(Math.max(xp, 500), 0.55);

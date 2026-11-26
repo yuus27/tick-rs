@@ -4,6 +4,7 @@ import { Icon, PageHead, Ring, Bar, SkillIcon, Empty, delay, CountUp } from '../
 import { href } from '../lib/router.js';
 import { nl, short } from '../lib/format.js';
 import { xpFor } from '../lib/xp.js';
+import { goalMax } from '../lib/games.js';
 import { questStatus } from '../lib/wiki.js';
 
 function Streak({ days = [] }) {
@@ -45,12 +46,12 @@ export default function Goals() {
     if (g.type === 'skill') {
       const s = skills.find((x) => x.name === g.skill);
       const start = g.startXp ?? 0;
-      const target = xpFor(g.level);
+      const target = xpFor(g.level, g.skill);
       const left = s?.xp != null ? Math.max(0, target - s.xp) : null;
       const prog = s?.xp != null ? Math.max(0, Math.min(1, (s.xp - start) / Math.max(1, target - start))) : 0;
       return { ...g, prog, left, done: left === 0, cur: s?.level };
     }
-    const reqs = (g.skills || []).map((r) => ({ ...r, mine: levels[r.skill] ?? null, ok: (levels[r.skill] ?? 1) >= r.level, left: Math.max(0, xpFor(r.level) - (skills.find((x) => x.name === r.skill)?.xp ?? 0)) }));
+    const reqs = (g.skills || []).map((r) => ({ ...r, mine: levels[r.skill] ?? null, ok: (levels[r.skill] ?? 1) >= r.level, left: Math.max(0, xpFor(r.level, r.skill) - (skills.find((x) => x.name === r.skill)?.xp ?? 0)) }));
     const st = questStatus(pq, g.title);
     const prog = st === 'done' ? 1 : reqs.length ? reqs.filter((r) => r.ok).length / reqs.length * 0.9 : 0;
     return { ...g, reqs, prog, done: st === 'done', status: st };
@@ -81,7 +82,7 @@ export default function Goals() {
           <h2 className="h">Nieuw skill-doel</h2>
           <form onSubmit={add} className="row wrap">
             <select className="input" style={{ flex: '1 1 180px' }} value={skill} onChange={(e) => setSkill(e.target.value)} aria-label="Skill">{cfg.skills.map((s) => <option key={s}>{s}</option>)}</select>
-            <input className="input mono" style={{ width: 110 }} type="number" min="2" max="99" value={lvl} onChange={(e) => setLvl(Math.max(2, Math.min(99, Number(e.target.value) || 2)))} aria-label="Doel-level" />
+            <input className="input mono" style={{ width: 110 }} type="number" min="2" max={goalMax(game, skill)} value={lvl} onChange={(e) => setLvl(Math.max(2, Math.min(goalMax(game, skill), Number(e.target.value) || 2)))} aria-label="Doel-level" />
             <button className="btn primary" type="submit"><Icon name="plus" size={16} /> Toevoegen</button>
           </form>
           <span className="small muted">Quest-doelen voeg je toe vanaf een questpagina (“Maak er een doel van”). De skill-requirements komen dan automatisch mee.</span>

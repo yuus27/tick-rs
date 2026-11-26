@@ -266,6 +266,25 @@ async function settle(p) {
   try { return { ok: true, value: await p }; } catch (e) { return { ok: false, error: e.message, status: e.status }; }
 }
 
+// OSRS-hiscores: de hiscores van Jagex haperen soms (time-out, 5xx, tijdelijke blokkade).
+// Probeer de JSON-versie twee keer en val terug op de oude CSV-versie (index_lite.ws).
+const OSRS_HS_SKILLS = ['Overall', 'Attack', 'Defence', 'Strength', 'Hitpoints', 'Ranged', 'Prayer', 'Magic', 'Cooking', 'Woodcutting', 'Fletching', 'Fishing', 'Firemaking', 'Crafting', 'Smithing', 'Mining', 'Herblore', 'Agility', 'Thieving', 'Slayer', 'Farming', 'Runecraft', 'Hunter', 'Construction', 'Sailing'];
+async function osrsHiscores(enc) {
+  const json = `https://secure.runescape.com/m=hiscore_oldschool/index_lite.json?player=${enc}`;
+  let r = await settle(fetchCached(json, 120e3));
+  if (r.ok || r.status === 404) return r;
+  await new Promise((ok) => setTimeout(ok, 800));
+  r = await settle(fetchCached(json, 120e3));
+  if (r.ok || r.status === 404) return r;
+  const first = r;
+  const csv = await settle(fetchCached(`https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=${enc}`, 120e3, 'text'));
+  if (!csv.ok) return { ...first, error: `${first.error}${first.status ? ` (${first.status})` : ''}; CSV: ${csv.error}${csv.status ? ` (${csv.status})` : ''}` };
+  const rows = String(csv.value).trim().split(/\r?\n/).map((l) => l.split(',').map(Number));
+  const skills = OSRS_HS_SKILLS.map((name, i) => ({ name, rank: rows[i]?.[0] ?? -1, level: rows[i]?.[1] ?? 1, xp: rows[i]?.[2] ?? 0 }));
+  if (!skills.some((x) => x.xp > 0)) return { ...first, error: 'CSV-hiscores onleesbaar' };
+  return { ok: true, value: { skills, activities: [] }, via: 'CSV-terugval' };
+}
+
 app.get('/api/:game/player/:name', wrap(async (req, res) => {
   const game = req.params.game;
   gameOf(req);
@@ -276,10 +295,10 @@ app.get('/api/:game/player/:name', wrap(async (req, res) => {
 
   if (game === 'osrs') {
     const [hs, sync] = await Promise.all([
-      settle(fetchCached(`https://secure.runescape.com/m=hiscore_oldschool/index_lite.json?player=${enc}`, 120e3)),
+      osrsHiscores(enc),
       settle(fetchCached(`https://sync.runescape.wiki/runelite/player/${enc}/STANDARD`, 120e3)),
     ]);
-    out.sources.hiscores = hs.ok ? 'ok' : (hs.status === 404 ? 'niet gevonden' : 'fout');
+    out.sources.hiscores = hs.ok ? (hs.via ? `ok (${hs.via})` : 'ok') : (hs.status === 404 ? 'niet gevonden' : `fout: ${hs.error || 'onbekend'}`);
     out.sources.wikisync = sync.ok ? 'ok' : (sync.status === 404 ? 'geen WikiSync-data' : 'fout');
     if (hs.ok && Array.isArray(hs.value.skills)) {
       for (const s of hs.value.skills) {
@@ -310,7 +329,7 @@ app.get('/api/:game/player/:name', wrap(async (req, res) => {
       settle(fetchCached(`https://apps.runescape.com/runemetrics/profile/profile?user=${enc}&activities=20`, 120e3)),
       settle(fetchCached(`https://apps.runescape.com/runemetrics/quests?user=${enc}`, 300e3)),
     ]);
-    out.sources.hiscores = hs.ok ? 'ok' : (hs.status === 404 ? 'niet gevonden' : 'fout');
+    out.sources.hiscores = hs.ok ? 'ok' : (hs.status === 404 ? 'niet gevonden' : `fout: ${hs.error || 'onbekend'}${hs.status ? ` (${hs.status})` : ''}`);
     out.sources.wikisync = sync.ok && sync.value?.quests ? 'ok' : (sync.status === 400 || sync.status === 404 ? 'geen WikiSync-data' : 'fout');
     out.sources.runemetrics = rm.ok && !rm.value.error ? 'ok' : 'offline';
     if (hs.ok) {

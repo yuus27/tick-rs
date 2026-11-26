@@ -69,7 +69,7 @@ export default function BuyVsGrind() {
   const curXp = s?.xp ?? 0;
   const cur = s?.level ?? 1;
   const target = Math.max(cur + 1, tgt);
-  const xp = Math.max(0, xpFor(target) - curXp);
+  const xp = Math.max(0, xpFor(target, skill) - curXp);
   const actions = Math.ceil(xp / method.xp);
   const unit = method.items.reduce((a, [n, q]) => { const it = byName[n.toLowerCase()]; const p = it?.high ?? it?.low; return a + (p != null ? p * q : NaN); }, 0);
   const cost = Number.isFinite(unit) ? actions * unit : null;
@@ -100,7 +100,7 @@ export default function BuyVsGrind() {
         <div className="col" style={{ gap: 4, padding: 14, borderRadius: 14, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
           <span className="small muted">{skill} nu → doel</span>
           <div className="row between"><span className="num" style={{ fontSize: 24 }}>{cur} → {target}</span>
-            <span className="row" style={{ gap: 4 }}><button className="btn sm icon" onClick={() => setTgt(Math.max(cur + 1, target - 1))} aria-label="Doel omlaag"><Icon name="minus" size={13} /></button><button className="btn sm icon" onClick={() => setTgt(Math.min(99, target + 1))} aria-label="Doel omhoog"><Icon name="plus" size={13} /></button></span>
+            <span className="row" style={{ gap: 4 }}><button className="btn sm icon" onClick={() => setTgt(Math.max(cur + 1, target - 1))} aria-label="Doel omlaag"><Icon name="minus" size={13} /></button><button className="btn sm icon" onClick={() => setTgt(Math.min(game === 'rs3' ? 120 : 99, target + 1))} aria-label="Doel omhoog"><Icon name="plus" size={13} /></button></span>
           </div>
           <span className="mono small acc">{nl(xp)} XP</span>
         </div>

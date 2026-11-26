@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, useEffect } from 'react';
 import { useApp } from '../lib/store.jsx';
 import { useAsync } from '../lib/api.js';
 import { resolveTitle, parsePage, toDoc, stripTags, readTables, questStatus } from '../lib/wiki.js';
-import { guideCandidates } from '../lib/games.js';
+import { guideCandidates, skillMax, goalMax } from '../lib/games.js';
 import WikiContent, { scrollToAnchor } from '../components/WikiContent.jsx';
 import { Icon, Skel, ErrorBox, SkillIcon, Ring, Empty, delay, CountUp } from '../components/ui.jsx';
 import { href, wikiHref } from '../lib/router.js';
@@ -140,14 +140,14 @@ function QuestTab({ skill, xp }) {
   const open = rows.filter((r) => r.status !== 'done');
   const shown = hideDone && pq ? open : rows;
   const gain = open.reduce((a, r) => a + (r.amount || 0), 0);
-  const after = xp != null ? levelFor(xp + gain) : null;
+  const after = xp != null ? levelFor(xp + gain, skill, skillMax(game, skill)) : null;
 
   return (
     <div className="col" style={{ gap: 16 }}>
       <div className="grid g3">
         <div className="card accent"><div className="small muted">Te verdienen via quests</div><div className="num" style={{ fontSize: 30 }}><CountUp value={gain} format={(v) => nl(v)} /> XP</div></div>
         <div className="card"><div className="small muted">Quests met {skill}-XP</div><div className="num" style={{ fontSize: 30 }}>{open.length}<span className="muted" style={{ fontSize: 16 }}> open / {rows.length}</span></div></div>
-        <div className="card"><div className="small muted">Level na alle open quests</div><div className="num" style={{ fontSize: 30 }}>{after ?? '–'}{xp != null && <span className="muted" style={{ fontSize: 16 }}> (nu {levelFor(xp)})</span>}</div></div>
+        <div className="card"><div className="small muted">Level na alle open quests</div><div className="num" style={{ fontSize: 30 }}>{after ?? '–'}{xp != null && <span className="muted" style={{ fontSize: 16 }}> (nu {levelFor(xp, skill, skillMax(game, skill))})</span>}</div></div>
       </div>
       <div className="row between">
         <span className="small muted">Tip: lange early-game grinds sla je over door deze quests eerst te doen. Bron: <a href={wikiHref(q.data.hit.title)}>{q.data.hit.title}</a></span>
@@ -178,11 +178,13 @@ export default function SkillGuide({ skill, query }) {
   const isF2P = cfg.f2p.includes(known);
   const modes = MODES.filter(([k]) => k !== 'f2p' || isF2P);
   const [mode, setMode] = useState(query.mode && modes.some(([k]) => k === query.mode) ? query.mode : 'p2p');
-  const [target, setTarget] = useState(99);
+  const cap = skillMax(game, known);
+  const [target, setTarget] = useState(cap);
+  useEffect(() => { setTarget((t) => (t === 99 || t === 110 || t === 120 ? cap : t)); }, [cap]);
 
   const xp = s?.xp ?? null;
   const lvl = s?.level ?? null;
-  const toTarget = xp != null ? Math.max(0, xpFor(target) - xp) : null;
+  const toTarget = xp != null ? Math.max(0, xpFor(target, known) - xp) : null;
   const inGoals = (goals || []).some((g) => g.type === 'skill' && g.game === game && g.skill === known && g.level === target);
 
   const addGoal = () => {
@@ -197,19 +199,19 @@ export default function SkillGuide({ skill, query }) {
           <span className="icon-tile" style={{ width: 64, height: 64, borderRadius: 18 }}><SkillIcon skill={known} size={40} /></span>
           <div className="col" style={{ gap: 6, minWidth: 0 }}>
             <div className="eyebrow"><a href={href('skills')} className="row" style={{ gap: 6, color: 'var(--mut)' }}><Icon name="back" size={14} /> Skill guides</a><span>{cfg.short}</span>{isF2P && <span className="tag">F2P-skill</span>}</div>
-            <h1 className="title">{known} 1–{cfg.maxLevel}</h1>
+            <h1 className="title">{known} 1–{cap}</h1>
           </div>
         </div>
         <div className="row wrap" style={{ gap: 16 }}>
-          <Ring value={xp != null ? Math.min(1, xp / xpFor(target)) : 0} size={92} stroke={8}><span className="num" style={{ fontSize: 24 }}>{lvl ?? '–'}</span><span className="dim" style={{ fontSize: 10.5 }}>van {target}</span></Ring>
+          <Ring value={xp != null ? Math.min(1, xp / xpFor(target, known)) : 0} size={92} stroke={8}><span className="num" style={{ fontSize: 24 }}>{lvl ?? '–'}</span><span className="dim" style={{ fontSize: 10.5 }}>van {target}</span></Ring>
           <div className="col" style={{ gap: 6 }}>
             <span className="small muted">XP tot level</span>
             <div className="row" style={{ gap: 8 }}>
               <button className="btn sm icon" aria-label="Doel omlaag" onClick={() => setTarget((t) => Math.max((lvl || 1) + 1, t - 1))}><Icon name="minus" size={14} /></button>
               <span className="num" style={{ fontSize: 22, minWidth: 34, textAlign: 'center' }}>{target}</span>
-              <button className="btn sm icon" aria-label="Doel omhoog" onClick={() => setTarget((t) => Math.min(99, t + 1))}><Icon name="plus" size={14} /></button>
+              <button className="btn sm icon" aria-label="Doel omhoog" onClick={() => setTarget((t) => Math.min(goalMax(game, known), t + 1))}><Icon name="plus" size={14} /></button>
             </div>
-            <span className="mono small acc">{toTarget != null ? `${nl(toTarget)} XP` : `${nl(xpFor(target))} XP totaal`}</span>
+            <span className="mono small acc">{toTarget != null ? `${nl(toTarget)} XP` : `${nl(xpFor(target, known))} XP totaal`}</span>
           </div>
           <button className={`btn ${inGoals ? '' : 'primary'}`} onClick={addGoal} disabled={inGoals}><Icon name={inGoals ? 'check' : 'target'} size={16} /> {inGoals ? 'Staat in doelen' : `Doel: ${target}`}</button>
         </div>

@@ -6,6 +6,14 @@ const RS3_SKILLS = ['Attack', 'Strength', 'Defence', 'Constitution', 'Ranged', '
 const OSRS_F2P = ['Attack', 'Strength', 'Defence', 'Hitpoints', 'Ranged', 'Prayer', 'Magic', 'Cooking', 'Woodcutting', 'Fishing', 'Firemaking', 'Crafting', 'Smithing', 'Mining', 'Runecraft'];
 const RS3_F2P = ['Attack', 'Strength', 'Defence', 'Constitution', 'Ranged', 'Prayer', 'Magic', 'Cooking', 'Woodcutting', 'Fishing', 'Firemaking', 'Crafting', 'Smithing', 'Mining', 'Runecrafting', 'Dungeoneering'];
 
+// Maximale (echte) levels in RS3 per skill (bron: RuneScape Wiki, Skills). Alle andere: 99.
+const RS3_MAX = { Attack: 120, Strength: 120, Ranged: 120, Magic: 120, Necromancy: 120, Dungeoneering: 120, Herblore: 120, Thieving: 120, Slayer: 120, Farming: 120, Construction: 120, Invention: 120, Archaeology: 120, Mining: 110, Smithing: 110, Crafting: 110, Firemaking: 110, Fletching: 110, Woodcutting: 110, Runecrafting: 110, Hunter: 110 };
+
+// Hoogste echte level van een skill (OSRS: altijd 99)
+export const skillMax = (game, skill) => (game === 'rs3' ? RS3_MAX[skill] || 99 : 99);
+// Hoogste level dat je als doel kunt kiezen (RS3: virtueel t/m 120, Invention t/m 150)
+export const goalMax = (game, skill) => (game === 'rs3' ? (skill === 'Invention' ? 150 : 120) : 99);
+
 const MELEE = ['Attack', 'Strength', 'Defence', 'Hitpoints', 'Constitution'];
 
 export const GAMES = {
@@ -42,7 +50,7 @@ export const GAMES = {
     wikiBase: 'https://runescape.wiki',
     skills: RS3_SKILLS,
     f2p: RS3_F2P,
-    maxLevel: 99,
+    maxLevel: 120,
     questSourceName: 'WikiSync (RS3 Plugin Hub)',
     pages: {
       questList: ['List of quests', 'Quests/List', 'Quests'],

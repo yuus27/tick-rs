@@ -29,6 +29,7 @@ Het resultaat: geen tien browsertabs en zelf eisen vergelijken meer. Je krijgt a
 | *"Welke quest kan ik nu doen?"* | Per quest de eisen en voorwaarden-boom checken | Al gecheckt, in de optimale volgorde, met de level-ups die hij oplevert |
 | *"Waar train ik naartoe?"* | Zelf uitzoeken welke levels iets openen | *"Thieving 14 → 25 opent 7 quests"*, met de beste methode voor jouw level |
 | *"Is dit een goede flip?"* | Prijs en een simpele grafiek | Marge ná GE-tax, buy limits, volume, winst per 4 uur, marktalarmen |
+| *"Wat is mijn volgende stap?"* | Een wiki-gids van honderden stappen en zelf bijhouden waar je bent | tick. vinkt af wat je al hebt gedaan en zet je volgende stap bovenaan |
 | *"Waar begint deze quest?"* | "Show on map" in de browser, zelf zoeken | Klik in tick. en de ingebouwde kaart opent met een pin, met alle quest-startpunten erbij |
 | *"Welke diary-taken kan ik al?"* | Per regio 4 tiers aan taken naast je stats leggen | Alle 492 taken gecheckt: wat nu kan, wat bijna kan en welke tier het dichtstbij is |
 | *"Wat heb ik vanavond eigenlijk bereikt?"* | Zelf XP en levels bijhouden | Start een sessie en zie na afloop je XP, levels, quests en GE-winst |
@@ -49,6 +50,11 @@ Kies hoeveel tijd je hebt en waar je zin in hebt (questen, AFK, bossen, geld) en
 - **members/F2P en ironman** (geen GE-flips of koopmethodes voor ironmen).
 
 Wissel, verwijder of voeg blokken toe tot het plan klopt.
+
+### 🪜 Stappenplan <sub>vanaf 0.4.4</sub>
+<img src="docs/screenshots/stappenplan.jpg" alt="Stappenplan: je volgende stap in een complete route door het spel" width="100%">
+
+Een complete route door het spel, stap voor stap van de wiki: de **Efficient Ironman Pathway Guide** voor RS3 en **BRUHsailer** (plus een kortere route naar Barrows gloves) voor OSRS. tick. vinkt automatisch af wat je account al gedaan heeft (quests en levels), laat je **volgende stap** zien met wat er nog ontbreekt, en wijst stappen aan die je onderweg hebt gemist. Geen ironman? Dan slaat tick. de stappen over die je gewoon op de GE koopt.
 
 ### 💰 Money-making op jouw stats
 <img src="docs/screenshots/money-making.jpg" alt="Money-making gefilterd op je eigen levels" width="100%">
@@ -114,7 +120,7 @@ Klik op *Start sessie* als je gaat spelen. Na afloop zie je wat het opleverde: X
 <td width="50%"><img src="docs/screenshots/dashboard-rs3.jpg" alt="Dashboard voor RuneScape 3"></td>
 </tr></table>
 
-Wissel met één klik tussen Old School en RuneScape 3; alle schermen schakelen mee.
+Bij de eerste start kies je welk spel je speelt. Daarna wissel je met één klik via de **OSRS / RS3**-knop rechtsboven; alle schermen schakelen mee.
 
 ---
 

@@ -8,6 +8,7 @@ import { osrsCombat, rs3Combat } from '../lib/xp.js';
 const NAV = [
   { key: '', label: 'Dashboard', icon: 'home' },
   { key: 'play', label: 'Nu spelen', icon: 'spark' },
+  { key: 'path', label: 'Stappenplan', icon: 'steps', badge: 'NIEUW' },
   { key: 'radar', label: 'Unlock-radar', icon: 'route' },
   { key: 'ge', label: 'GE-terminal', icon: 'chart', badge: 'LIVE' },
   { key: 'market', label: 'Markt-radar', icon: 'bell' },

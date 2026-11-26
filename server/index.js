@@ -360,7 +360,7 @@ app.get('/api/:game/player/:name', wrap(async (req, res) => {
 }));
 
 // ---------- lokale opslag ----------
-const STORE_KEYS = new Set(['settings', 'watchlist', 'journal', 'goals', 'history', 'quests', 'sessions', 'portfolio', 'paper']);
+const STORE_KEYS = new Set(['settings', 'watchlist', 'journal', 'goals', 'history', 'quests', 'sessions', 'portfolio', 'paper', 'pathway']);
 let writeChain = Promise.resolve();
 
 app.get('/api/store/:key', wrap(async (req, res) => {

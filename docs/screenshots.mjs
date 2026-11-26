@@ -19,6 +19,7 @@ const SHOTS = [
   { game: 'osrs', path: '#/market', file: 'markt-radar', h: 1000, slow: true },
   { game: 'rs3', path: '#/radar', file: 'unlock-radar', h: 1000 },
   { game: 'osrs', path: '#/wiki/Abyssal%20whip', file: 'wiki', h: 1000 },
+  { game: 'osrs', path: '#/path', file: 'stappenplan', h: 1100, slow: true },
   { game: 'osrs', path: '#/map', file: 'kaart', h: 1000, slow: true },
   { game: 'osrs', path: '#/diaries', file: 'diaries', h: 1200, slow: true },
   { game: 'osrs', path: '#/sessions', file: 'sessies', h: 1000 },

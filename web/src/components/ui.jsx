@@ -35,6 +35,7 @@ const P = {
   spark: 'M12 2v4 M12 18v4 M4.9 4.9l2.8 2.8 M16.3 16.3l2.8 2.8 M2 12h4 M18 12h4 M4.9 19.1l2.8-2.8 M16.3 7.7l2.8-2.8',
   info: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18 M12 11v6 M12 7.5v.5',
   map: 'M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z M9 4v14 M15 6v14',
+  steps: 'M3 20h5v-5h5v-5h5V5h3',
 };
 export function Icon({ name, size = 18, stroke = 1.9, fill = 'none', className, style }) {
   return (

@@ -23,6 +23,8 @@ import Diag from './pages/Diag.jsx';
 import Sessions from './pages/Sessions.jsx';
 import Diaries from './pages/Diaries.jsx';
 import MapView from './pages/MapView.jsx';
+import Pathway from './pages/Pathway.jsx';
+import FirstRun from './components/FirstRun.jsx';
 import Watcher from './components/Watcher.jsx';
 
 class Boundary extends Component {
@@ -51,6 +53,7 @@ function View({ route }) {
     case 'sessions': return <Sessions />;
     case 'diaries': return <Diaries />;
     case 'map': return <MapView query={route.query} />;
+    case 'path': return <Pathway />;
     default: return <div className="page"><div className="card"><ErrorBox error={new Error('Pagina bestaat niet')} /></div></div>;
   }
 }
@@ -96,6 +99,7 @@ export default function App() {
           </Boundary>
         </div>
       </div>
+      <FirstRun />
       <div className="toasts" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} className={`toast ${t.kind}`}>

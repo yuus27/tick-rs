@@ -6,11 +6,11 @@ import { Icon, SkillIcon } from './ui.jsx';
 import { href, navigate, wikiHref } from '../lib/router.js';
 
 const PAGES = [
-  ['Dashboard', ''], ['Nu spelen', 'play'], ['Unlock-radar', 'radar'], ['GE-terminal', 'ge'], ['Markt-radar', 'market'], ['Quests', 'quests'], ['Skill guides', 'skills'], ['Wiki', 'wiki'], ['Money-making', 'money'], ['Doelen', 'goals'], ['Calculators', 'tools'], ['Instellingen', 'settings'], ['Diagnose', 'diag'],
+  ['Dashboard', ''], ['Nu spelen', 'play'], ['Stappenplan', 'path'], ['Kaart', 'map'], ['Diaries', 'diaries'], ['Sessies', 'sessions'], ['Unlock-radar', 'radar'], ['GE-terminal', 'ge'], ['Markt-radar', 'market'], ['Quests', 'quests'], ['Skill guides', 'skills'], ['Wiki', 'wiki'], ['Money-making', 'money'], ['Doelen', 'goals'], ['Calculators', 'tools'], ['Instellingen', 'settings'], ['Diagnose', 'diag'],
 ];
 
 export default function Topbar() {
-  const { game, cfg, player, loadPlayer } = useApp();
+  const { game, cfg, player, loadPlayer, setGame } = useApp();
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
   const [res, setRes] = useState([]);
@@ -104,7 +104,10 @@ export default function Topbar() {
       <SessionPill />
       {upd?.status === 'ready' && <button className="btn sm primary" onClick={() => window.tick.update.install()} title="Herstart tick. om de update te installeren"><Icon name="spark" size={14} /> Update {upd.version}: herstart</button>}
       {upd?.status === 'downloading' && <span className="tag acc" title="Update wordt gedownload">Update {upd.version} · {upd.progress}%</span>}
-      <span className="tag line">{cfg.label}</span>
+      <div className="gameswitch" role="tablist" aria-label="Spel kiezen">
+        <button role="tab" aria-selected={game === 'osrs'} className={`osrs ${game === 'osrs' ? 'on' : ''}`} onClick={() => setGame('osrs')} title="Old School RuneScape">OSRS</button>
+        <button role="tab" aria-selected={game === 'rs3'} className={`rs3 ${game === 'rs3' ? 'on' : ''}`} onClick={() => setGame('rs3')} title="RuneScape 3">RS3</button>
+      </div>
       {window.tick?.desktop && (
         <button className={`btn sm icon ${onTop ? 'primary' : ''}`} onClick={() => window.tick.toggleOnTop().then(setOnTop)} aria-pressed={onTop} aria-label="Altijd bovenop" title="Altijd bovenop (Ctrl+Shift+T): handig op je tweede scherm naast de game">
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5 M9 3h6l-1 6 3 3v2H7v-2l3-3z" /></svg>

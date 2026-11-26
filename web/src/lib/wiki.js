@@ -156,7 +156,9 @@ export function extractSkills(el, skillNames) {
   el.querySelectorAll('a[title], img[alt]').forEach((n) => {
     const label = (n.getAttribute('title') || n.getAttribute('alt') || '').replace(/[-_ ]?icon(\.png)?$/i, '').replace(/\.png$/i, '').trim();
     if (!skillNames.some((s) => s.toLowerCase() === label.toLowerCase())) return;
-    const holder = n.tagName === 'IMG' && n.parentElement?.tagName === 'A' ? n.parentElement : n;
+    let holder = n.tagName === 'IMG' && n.parentElement?.tagName === 'A' ? n.parentElement : n;
+    // Afbeelding verpakt in <span typeof="mw:File"><a><img></a></span> 70: klim naar de buitenste verpakking
+    for (let i = 0; i < 2 && !holder.nextSibling && holder.parentElement && holder.parentElement !== el && /^(SPAN|A)$/.test(holder.parentElement.tagName); i++) holder = holder.parentElement;
     let txt = '';
     let sib = holder.nextSibling;
     for (let i = 0; i < 3 && sib; i++, sib = sib.nextSibling) { txt += sib.textContent || ''; if (/\d/.test(txt)) break; }
@@ -179,6 +181,8 @@ export function extractSkills(el, skillNames) {
     let m;
     while ((m = re1.exec(text))) add(s, m[1], /boost/i.test(text.slice(m.index, m.index + 60)));
     while ((m = re2.exec(text))) add(s, m[1], /boost/i.test(text.slice(m.index, m.index + 60)));
+    const re3 = new RegExp(`\\b${s}\\s+(?:up\\s+)?to\\s+(?:level\\s+)?(\\d{1,3})\\b`, 'gi');
+    while ((m = re3.exec(text))) add(s, m[1], false);
   }
   return [...found.values()].sort((a, b) => b.level - a.level);
 }

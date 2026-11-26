@@ -13,6 +13,7 @@ const DEFAULTS = {
   quests: { osrs: {}, rs3: {} },
   sessions: { active: null, history: [] },
   portfolio: { osrs: [], rs3: [] },
+  pathway: {},
   paper: { osrs: { cash: 10000000, positions: [], trades: [] }, rs3: { cash: 100000000, positions: [], trades: [] } },
 };
 

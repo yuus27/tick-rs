@@ -6,8 +6,9 @@ import { useMarket, buildItems } from '../lib/market.js';
 import { Icon, CountUp, Ring, Bar, SkillIcon, ItemIcon, Skel, Empty, delay } from '../components/ui.jsx';
 import { href, wikiHref } from '../lib/router.js';
 import { nl, short, ago, greeting } from '../lib/format.js';
-import { progressToNext, osrsCombat, rs3Combat, xpFor } from '../lib/xp.js';
+import { osrsCombat, rs3Combat, xpFor } from '../lib/xp.js';
 import { SKILL_COLORS, skillMax } from '../lib/games.js';
+import { skillView, virtualOn } from '../lib/vlevels.js';
 
 function Onboarding() {
   const { cfg, game, update, toast } = useApp();
@@ -47,7 +48,9 @@ export default function Dashboard() {
   const qTotal = p?.quests ? Object.keys(p.quests).length : null;
   const myGoals = (goals || []).filter((g) => g.game === game).slice(0, 4);
   const skills = p?.skills || [];
-  const closest = [...skills].filter((s) => s.level < skillMax(game, s.name) && s.xp != null).sort((a, b) => progressToNext(b.xp, b.level, b.name, skillMax(game, b.name)) - progressToNext(a.xp, a.level, a.name, skillMax(game, a.name))).slice(0, 3);
+  const virtual = virtualOn(settings, game);
+  const views = useMemo(() => Object.fromEntries(skills.map((s) => [s.name, skillView(game, s, virtual)])), [skills, game, virtual]);
+  const closest = [...skills].filter((s) => !views[s.name].maxed && s.xp != null).sort((a, b) => views[b.name].prog - views[a.name].prog).slice(0, 3);
   const recent = (history || []).filter((h) => h.game === game).slice(0, 5);
 
   const kpis = [
@@ -165,18 +168,18 @@ export default function Dashboard() {
           <div className="row wrap between" style={{ marginBottom: 14 }}>
             <div className="col" style={{ gap: 2 }}>
               <h2 className="h">Skills</h2>
-              <span className="small muted">Balk = voortgang naar volgend level (gemaxt: naar 200M XP) · klik voor de skill guide</span>
+              <span className="small muted">Balk = voortgang naar volgend {virtual ? 'virtueel ' : ''}level (gemaxt: naar 200M XP) · klik voor de skill guide</span>
             </div>
             {closest.length > 0 && <span className="small muted">Bijna level-up: {closest.map((c) => <b key={c.name} style={{ color: 'var(--tx)' }}> {c.name}</b>)}</span>}
           </div>
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(172px, 1fr))', gap: 10 }}>
             {skills.map((s, i) => (
-              <a key={s.name} href={href('skills', s.name)} className="skill-tile rise" style={delay(i, 0.4, 0.02)} title={s.xp != null ? (s.level < skillMax(game, s.name) ? `${s.name}: ${nl(Math.max(0, xpFor(s.level + 1, s.name) - s.xp))} XP tot level ${s.level + 1}` : `${s.name}: ${nl(s.xp)} / 200.000.000 XP`) : s.name}>
+              <a key={s.name} href={href('skills', s.name)} className="skill-tile rise" style={delay(i, 0.4, 0.02)} title={s.xp != null ? (views[s.name].toNext != null ? `${s.name}: ${nl(views[s.name].toNext)} XP tot ${views[s.name].shown + 1 > views[s.name].cap ? 'virtueel ' : ''}level ${views[s.name].shown + 1}` : `${s.name}: ${nl(s.xp)} / 200.000.000 XP`) : s.name}>
                 <div className="row between" style={{ gap: 8 }}>
                   <span className="row" style={{ gap: 8, fontSize: 13, color: 'var(--tx2)', minWidth: 0 }}><SkillIcon skill={s.name} size={18} /><span className="trunc">{s.name}</span></span>
-                  <span className="num" style={{ flex: 'none', fontSize: s.level >= 100 ? 17 : 19, color: s.level >= skillMax(game, s.name) ? 'var(--acc)' : undefined }}>{s.level}</span>
+                  <span className="num" style={{ flex: 'none', fontSize: views[s.name].shown >= 100 ? 17 : 19, color: views[s.name].realMaxed ? 'var(--acc)' : undefined }}>{views[s.name].shown}</span>
                 </div>
-                <Bar value={s.xp == null && s.level >= skillMax(game, s.name) ? 1 : progressToNext(s.xp, s.level, s.name, skillMax(game, s.name))} color={SKILL_COLORS[s.name]} />
+                <Bar value={views[s.name].prog} color={SKILL_COLORS[s.name]} />
               </a>
             ))}
           </div>

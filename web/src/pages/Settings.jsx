@@ -4,6 +4,7 @@ import { playerApi } from '../lib/api.js';
 import { GAMES } from '../lib/games.js';
 import { Icon, PageHead, Toggle } from '../components/ui.jsx';
 import { nl } from '../lib/format.js';
+import { virtualOn } from '../lib/vlevels.js';
 
 function RsnField({ g }) {
   const { settings, update, toast, loadPlayer, game } = useApp();
@@ -214,9 +215,14 @@ export default function Settings() {
       </section>
       <section className="grid g2">
         <div className="card col" style={{ gap: 14 }}>
-          <h3 className="h">Meldingen</h3>
+          <h3 className="h">Meldingen en weergave</h3>
           <div className="row between"><span>Windows-meldingen bij prijsalerts</span><Toggle on={!!settings.notify} onChange={askNotify} label="Windows-meldingen" /></div>
           <span className="small dim">Alerts stel je in per item in de GE-terminal. Ze werken zolang tick. open staat.</span>
+          <h3 className="h" style={{ marginTop: 6 }}>Virtual levels</h3>
+          {[['rs3', 'RS3 · tot 120 (Invention 150)'], ['osrs', 'OSRS · tot 126']].map(([g, l]) => (
+            <div key={g} className="row between"><span>{l}</span><Toggle on={virtualOn(settings, g)} onChange={(v) => update('settings', (s) => ({ ...s, virtualLevels: { ...(s.virtualLevels || {}), [g]: v } }))} label={`Virtual levels ${g.toUpperCase()}`} /></div>
+          ))}
+          <span className="small dim">Levels tellen voorbij de echte max door op je XP, zoals de instelling in RS3. Handig als je skills al op 99 staan. Requirements gebruiken altijd je echte level.</span>
         </div>
         <div className="card col" style={{ gap: 14 }}>
           <h3 className="h">RS3 GE-tax</h3>

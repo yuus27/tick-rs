@@ -1,8 +1,16 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { storeGet, storePut, playerApi } from './api.js';
-import { GAMES } from './games.js';
+import { GAMES, skillMax } from './games.js';
+import { levelFor } from './xp.js';
 
 const AppCtx = createContext(null);
+
+// Hiscores tonen soms een lager level dan de XP waard is (RS3 boven 99): leid het level dan af uit de XP,
+// tot de echte max van die skill (99, 110 of 120). Zo kloppen sorteren, 'bijna level-up' en requirements overal.
+export function normalizeLevels(game, d) {
+  if (!d?.skills) return d;
+  return { ...d, skills: d.skills.map((s) => (s.xp != null && s.level != null && s.name !== 'Overall' ? { ...s, level: Math.max(s.level, levelFor(s.xp, s.name, skillMax(game, s.name))) } : s)) };
+}
 
 const DEFAULTS = {
   settings: { game: 'osrs', osrsName: '', rs3Name: '', rs3TaxPct: 0, notify: true, lastVisit: null },
@@ -68,7 +76,7 @@ export function AppProvider({ children }) {
     if (!rsn) { setPlayer({ data: null, error: null, loading: false }); return; }
     setPlayer((p) => ({ ...p, loading: true, error: null }));
     playerApi(game, rsn).then(
-      (d) => setPlayer({ data: d, error: null, loading: false }),
+      (d) => setPlayer({ data: normalizeLevels(game, d), error: null, loading: false }),
       (e) => setPlayer({ data: null, error: e, loading: false }),
     );
   }, [game, rsn]);

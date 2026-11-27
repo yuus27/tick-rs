@@ -157,6 +157,9 @@ async function checkUpdates(manual = false) {
 }
 function setupUpdater() {
   if (!CAN_UPDATE()) return;
+  // Niet via de GitHub-releasespagina (/releases/latest gaf vaak 504), maar rechtstreeks via de
+  // downloadlink van de nieuwste release: die is veel betrouwbaarder. Zelfde bestanden (latest.yml + setup).
+  autoUpdater.setFeedURL({ provider: 'generic', url: 'https://github.com/yuus27/tick-rs/releases/latest/download', useMultipleRangeRequest: false });
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.on('checking-for-update', () => setUpd({ status: 'checking', error: null }));

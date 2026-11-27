@@ -174,13 +174,54 @@ const MAPS = {
   osrs: { probe: 'Lumbridge', re: /maps\.runescape\.wiki\/osrs\/versions\/([^/]+)\//, base: 'https://maps.runescape.wiki/osrs/versions/' },
   rs3: { probe: 'Lumbridge', re: /maps\.runescape\.wiki\/rs\/versions\/([^/]+)\//, base: 'https://maps.runescape.wiki/rs/versions/' },
 };
+// basemaps.json (welke kaarten er zijn) ontbreekt soms in een nieuwe kaartversie (OSRS 2026-11-25_a),
+// terwijl de tegels er wel zijn. Dan: laatst bekende lijst van schijf, of de vorige versie opzoeken.
+// De lijst verandert zelden, dus een oudere werkt prima naast de nieuwe tegels.
+const basemapMemo = new Map();
+async function loadBasemaps(game, m, version) {
+  try {
+    const list = await fetchCached(`${m.base}${version}/basemaps.json`, 24 * 3600e3);
+    saveBasemaps(game, version, list);
+    return list;
+  } catch (e) {
+    const memo = basemapMemo.get(game);
+    if (memo && memo.exp > Date.now()) return memo.list;
+    let list = null;
+    try { const disk = JSON.parse(await fs.readFile(path.join(DATA_DIR, `basemaps-${game}.json`), 'utf8')); list = disk.list; } catch { /* nog niets bewaard */ }
+    if (!list) {
+      const mm = String(version).match(/^(\d{4}-\d{2}-\d{2})([_-])([a-z])$/);
+      if (mm) {
+        const day = Date.parse(mm[1] + 'T00:00:00Z');
+        for (let i = 0; i <= 60 && !list; i++) {
+          const d = new Date(day - i * 864e5).toISOString().slice(0, 10);
+          for (const suf of ['c', 'b', 'a']) {
+            const v = `${d}${mm[2]}${suf}`;
+            if (v === version) continue;
+            try {
+              const r = await fetch(`${m.base}${v}/basemaps.json`, { headers: { 'User-Agent': USER_AGENT }, signal: AbortSignal.timeout(8000) });
+              if (r.ok) { list = await r.json(); saveBasemaps(game, v, list); break; }
+            } catch { /* volgende */ }
+          }
+        }
+      }
+    }
+    if (!list) throw e;
+    basemapMemo.set(game, { list, exp: Date.now() + 24 * 3600e3 });
+    return list;
+  }
+}
+function saveBasemaps(game, version, list) {
+  if (!Array.isArray(list) || !list.length) return;
+  fs.mkdir(DATA_DIR, { recursive: true }).then(() => fs.writeFile(path.join(DATA_DIR, `basemaps-${game}.json`), JSON.stringify({ version, savedAt: Date.now(), list }))).catch(() => {});
+}
+
 app.get('/api/:game/map', wrap(async (req, res) => {
   const g = gameOf(req);
   const m = MAPS[req.params.game];
   const page = await fetchCached(`${g.wiki}?action=parse&format=json&formatversion=2&prop=text&page=${encodeURIComponent(m.probe)}`, 6 * 3600e3);
   const version = (page?.parse?.text || '').match(m.re)?.[1];
   if (!version) throw new UpstreamError(502, 'Kaartversie niet gevonden');
-  const basemaps = await fetchCached(`${m.base}${version}/basemaps.json`, 24 * 3600e3);
+  const basemaps = await loadBasemaps(req.params.game, m, version);
   res.json({
     version,
     tiles: req.params.game === 'osrs' ? `${m.base}${version}/tiles/rendered/{mapId}/{z}/{p}_{x}_{y}.png` : `${m.base}${version}/map_squares/{mapId}/{z}/{p}_{x}_{y}.png`,

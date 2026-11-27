@@ -9,7 +9,7 @@ import { guideCandidates } from '../lib/games.js';
 import { parseRange } from './SkillGuide.jsx';
 import { Icon, PageHead, delay } from '../components/ui.jsx';
 
-const VERSION = '0.4.14';
+const VERSION = '0.4.15';
 const unwrap = (r) => (r && typeof r === 'object' && 'data' in r ? r.data : r);
 const keysOf = (o) => (o && typeof o === 'object' ? Object.keys(o).slice(0, 8) : []);
 

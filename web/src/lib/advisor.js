@@ -2,7 +2,7 @@
 // training per level (uit de skill guides), money-methodes, unlocks en de GE tot gescoorde suggesties.
 import { useMemo } from 'react';
 import { useAsync } from './api.js';
-import { resolveTitle, parsePage, toDoc, extractQuestDetails, questStatus, stripTags, myQuestPoints } from './wiki.js';
+import { resolveTitle, parsePage, toDoc, extractQuestDetails, questStatus, stripTags, playerQuestPoints } from './wiki.js';
 import { GAMES, guideCandidates, skillMax } from './games.js';
 import { normTitle, nl, short } from './format.js';
 import { xpFor, levelFor, progressToNext } from './xp.js';
@@ -159,7 +159,8 @@ export async function loadPrereq(game, title, known) {
   const d = extractQuestDetails(toDoc(game, p.text), GAMES[game].skills);
   const self = normTitle(title);
   const quests = [...new Set((d?.questLinks || []).filter((t) => known.has(normTitle(t)) && normTitle(t) !== self))];
-  const res = { quests, skills: d?.skills || [], qp: d?.questPoints || null, combat: d?.combat || null, found: !!d };
+  const partial = (d?.questPartial || []).map(normTitle).filter((t) => quests.some((q) => normTitle(q) === t));
+  const res = { quests, partial, skills: d?.skills || [], qp: d?.questPoints || null, combat: d?.combat || null, found: !!d };
   prereqCache.set(key, res);
   return res;
 }
@@ -226,7 +227,7 @@ export function computeAdvice({ game, intel, levels, skillsXp, questXp, prereq, 
       return true;
     };
     const xpOf = (s) => skillsXp[s] ?? xpFor(lv(s), s);
-    const myQp = myQuestPoints(intel.list, questMap);
+    const myQp = playerQuestPoints(player, intel.list, questMap);
     const qx = questXp || {};
     const pq = prereq || {};
     const tr = training || {};
@@ -255,7 +256,7 @@ export function computeAdvice({ game, intel, levels, skillsXp, questXp, prereq, 
     for (const q of qCands) {
       const k = normTitle(q.title);
       const pr = pq[k];
-      const missQ = pr ? pr.quests.filter((t) => questStatus(questMap, t) !== 'done') : [];
+      const missQ = pr ? pr.quests.filter((t) => { const st = questStatus(questMap, t); return (pr.partial || []).includes(normTitle(t)) ? st !== 'done' && st !== 'started' : st !== 'done'; }) : [];
       if (pr?.qp && myQp < pr.qp) missQ.push(`${pr.qp} QP (jij ${myQp})`);
       const missSk = [...q.miss];
       if (pr?.skills?.length) for (const s of pr.skills) if (lv(s.skill) < s.level && !missSk.some((m) => m.skill === s.skill)) missSk.push({ skill: s.skill, level: s.level, cur: lv(s.skill), boostable: s.boostable });

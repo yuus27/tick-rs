@@ -293,6 +293,7 @@ export function setupMcp({ app, DATA_DIR, ROOT, version }) {
         try {
           const A = await loadAi();
           if (combat == null) combat = A.combatOf(game, lv);
+          questPoints = await A.questPointsOf(game, player).catch(() => undefined) ?? undefined;
         } catch { /* bundel optioneel */ }
         const s = await settings();
         const diaries = player.diaries ? Object.fromEntries(Object.entries(player.diaries).map(([r, t]) => [r, Object.fromEntries(Object.entries(t).map(([tier, v]) => [tier, v.complete ? 'complete' : `${(v.tasks || []).filter(Boolean).length}/${(v.tasks || []).length}`]))])) : undefined;

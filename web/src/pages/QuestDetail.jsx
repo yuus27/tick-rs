@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../lib/store.jsx';
 import { useAsync } from '../lib/api.js';
-import { myQuestPoints, parsePage, toDoc, extractQuestDetails, resolveTitle, questStatus, stripTags, optimalRoute, questList } from '../lib/wiki.js';
+import { playerQuestPoints, parsePage, toDoc, extractQuestDetails, resolveTitle, questStatus, stripTags, optimalRoute, questList } from '../lib/wiki.js';
 import WikiContent from '../components/WikiContent.jsx';
 import { Icon, Skel, ErrorBox, SkillIcon, Bar, Ring, delay } from '../components/ui.jsx';
 import { href } from '../lib/router.js';
@@ -58,17 +58,20 @@ export default function QuestDetail({ title }) {
   const missing = skills.filter((s) => s.ok === false);
   const questSet = useMemo(() => new Set((list.data || []).map((q) => normTitle(q.title))), [list.data]);
   const isQuest = (t) => questSet.has(normTitle(t)) || questSet.has(normTitle(t.split('/')[0]));
-  const prereqs = [...new Set((view?.d?.questLinks || []).filter((t) => normTitle(t) !== normTitle(view?.title || '') && isQuest(t)))];
+  // Quest-links in de requirements; ook miniquests die WikiSync kent (bv. Alfred Grimhand's Barcrawl)
+  const prereqs = [...new Set((view?.d?.questLinks || []).filter((t) => normTitle(t) !== normTitle(view?.title || '') && (isQuest(t) || (!manualQuests && questStatus(pq, t) != null))))];
+  const partialSet = new Set((view?.d?.questPartial || []).map(normTitle));
   const knownQuest = (t) => questStatus(pq, t) || (manualQuests ? 'none' : null);
-  const prereqOpen = prereqs.filter((t) => { const s = knownQuest(t); return s && s !== 'done'; });
+  const prereqMet = (t) => { const s = knownQuest(t); return partialSet.has(normTitle(t)) ? s === 'done' || s === 'started' : s === 'done'; };
+  const prereqOpen = prereqs.filter((t) => knownQuest(t) && !prereqMet(t));
   const myStatus = questStatus(pq, view?.title || title);
   // QP-eis meetellen (bv. Dragon Slayer I: 32 QP)
   const needQp = view?.d?.questPoints || 0;
-  const myQp = useMemo(() => myQuestPoints(list.data, pq), [list.data, pq]);
+  const myQp = useMemo(() => playerQuestPoints(player, list.data, pq), [player.data, list.data, pq]);
   const qpKnown = needQp > 0 && (list.data?.length > 0) && (hasLevels || !manualQuests || Object.keys(pq).length > 0);
   const qpOk = qpKnown ? myQp >= needQp : null;
   const total = skills.length + prereqs.filter((t) => knownQuest(t)).length + (qpKnown ? 1 : 0);
-  const met = skills.filter((s) => s.ok).length + prereqs.filter((t) => knownQuest(t) === 'done').length + (qpOk ? 1 : 0);
+  const met = skills.filter((s) => s.ok).length + prereqs.filter((t) => prereqMet(t)).length + (qpOk ? 1 : 0);
   const readiness = total ? met / total : hasLevels ? 1 : 0;
 
   const ridx = (route.data || []).findIndex((t) => normTitle(t) === normTitle(view?.title || title));

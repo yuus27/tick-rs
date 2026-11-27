@@ -139,6 +139,13 @@ export function toDoc(game, html) {
 }
 
 // ---------- skills uit een cel halen ----------
+// "[boostable]" telt, "[not boostable]" / "cannot be boosted" niet (eerder telde elk "boost" als boostbaar)
+export function isBoostable(txt = '') {
+  const t = String(txt).toLowerCase();
+  if (/not\s+boostable|non-boostable|unboostable|cannot be boosted|can't be boosted|not be boosted/.test(t)) return false;
+  return /boostable|can be boosted|boosts? (?:are |is )?(?:allowed|possible)/.test(t);
+}
+
 export function extractSkills(el, skillNames) {
   const found = new Map();
   const add = (skill, level, boost) => {
@@ -148,9 +155,15 @@ export function extractSkills(el, skillNames) {
     const prev = found.get(s);
     if (!prev || prev.level < l) found.set(s, { skill: s, level: l, boostable: !!boost || prev?.boostable });
   };
-  const boostNear = (node) => /boost/i.test((node.closest('li') || node.parentElement || node).textContent || '');
+  const boostNear = (node) => isBoostable((node.closest('li') || node.parentElement || node).textContent || '');
 
-  el.querySelectorAll('[data-skill][data-level]').forEach((n) => add(n.getAttribute('data-skill'), n.getAttribute('data-level'), boostNear(n)));
+  const structured = [...el.querySelectorAll('[data-skill][data-level]')];
+  structured.forEach((n) => add(n.getAttribute('data-skill'), n.getAttribute('data-level'), boostNear(n)));
+  // De wiki geeft skill-eisen gestructureerd mee (data-skill/data-level): dan is dat de waarheid. De
+  // tekst-fallback hieronder las op RS3 anders "75 Agility · 76 Construction" als "Agility 76".
+  // Daarom tellen de icoon- en tekstregels hieronder alleen nog voor skills zonder gestructureerde eis.
+  const fixed = new Set(found.keys());
+  const addLoose = (skill, level, boost) => { const s = skillNames.find((n) => n.toLowerCase() === String(skill).toLowerCase()); if (s && !fixed.has(s)) add(s, level, boost); };
 
   // icoon/link gevolgd door een getal: <a title="Cooking"><img alt="Cooking icon"></a> 70
   el.querySelectorAll('a[title], img[alt]').forEach((n) => {
@@ -163,26 +176,29 @@ export function extractSkills(el, skillNames) {
     let sib = holder.nextSibling;
     for (let i = 0; i < 3 && sib; i++, sib = sib.nextSibling) { txt += sib.textContent || ''; if (/\d/.test(txt)) break; }
     const m = txt.match(/^\s*(\d{1,3})\b/);
-    if (m) add(label, m[1], boostNear(holder));
+    if (m) addLoose(label, m[1], boostNear(holder));
     else {
       let prevT = '';
       let p = holder.previousSibling;
       for (let i = 0; i < 2 && p; i++, p = p.previousSibling) prevT = (p.textContent || '') + prevT;
       const m2 = prevT.match(/(\d{1,3})\s*$/);
-      if (m2) add(label, m2[1], boostNear(holder));
+      if (m2) addLoose(label, m2[1], boostNear(holder));
     }
   });
 
   // tekst-fallback: "70 Cooking" of "Cooking 70" / "level 70 Cooking"
-  const text = el.textContent || '';
+  // Lijstitems en regels scheiden, zodat een getal nooit van het volgende item wordt geleend
+  const sep = el.cloneNode(true);
+  sep.querySelectorAll('li, br, p, tr').forEach((n) => n.appendChild(n.ownerDocument.createTextNode(' ; ')));
+  const text = sep.textContent || '';
   for (const s of skillNames) {
     const re1 = new RegExp(`(\\d{1,3})\\s+(?:\\[\\w+\\]\\s*)?${s}\\b`, 'gi');
     const re2 = new RegExp(`\\b${s}(?: level)?\\s*[:(]?\\s*(\\d{1,3})\\b`, 'gi');
     let m;
-    while ((m = re1.exec(text))) add(s, m[1], /boost/i.test(text.slice(m.index, m.index + 60)));
-    while ((m = re2.exec(text))) add(s, m[1], /boost/i.test(text.slice(m.index, m.index + 60)));
+    while ((m = re1.exec(text))) addLoose(s, m[1], isBoostable(text.slice(m.index, m.index + 60).split(/;|\n/)[0]));
+    while ((m = re2.exec(text))) addLoose(s, m[1], isBoostable(text.slice(m.index, m.index + 60).split(/;|\n/)[0]));
     const re3 = new RegExp(`\\b${s}\\s+(?:up\\s+)?to\\s+(?:level\\s+)?(\\d{1,3})\\b`, 'gi');
-    while ((m = re3.exec(text))) add(s, m[1], false);
+    while ((m = re3.exec(text))) addLoose(s, m[1], false);
   }
   return [...found.values()].sort((a, b) => b.level - a.level);
 }
@@ -221,11 +237,18 @@ export function extractQuestDetails(root, skillNames) {
     skills: req ? extractSkills(withoutIronman(req), skillNames) : [],
     questPoints: null,
     questLinks: [],
+    questPartial: [],
   };
   if (req) {
     const qp = (req.textContent || '').match(/(\d{1,3})\s*quest points?/i) || (req.textContent || '').match(/quest points?\D{0,12}(\d{1,3})/i);
     if (qp) out.questPoints = Number(qp[1]);
     out.questLinks = [...req.querySelectorAll('a[data-title]')].map((a) => a.getAttribute('data-title'));
+    // "Partial completion of X" / "Started X": alleen begonnen is genoeg
+    const ownText = (li) => [...li.childNodes].filter((n) => !/^(UL|OL)$/.test(n.tagName || '')).map((n) => n.textContent).join(' ');
+    out.questPartial = [...req.querySelectorAll('a[data-title]')].filter((a) => {
+      const li = a.closest('li');
+      return li && /partial(?:ly)?\s+complet|\bstarted\b|have begun|in progress|^\s*start(?:ing)?\s+(?:of\s+)?\S/i.test(ownText(li).replace(/\[[^\]]*\]/g, ''));
+    }).map((a) => a.getAttribute('data-title'));
     const c = (req.textContent || '').match(/combat level\D{0,6}(\d{1,3})/i);
     if (c) out.combat = Number(c[1]);
   }
@@ -250,9 +273,22 @@ export function readTables(root, { headerMatch } = {}) {
   return res;
 }
 
-// Jouw quest points: som van de QP van voltooide quests uit de questlijst
+// Jouw quest points: som van de QP van voltooide quests uit de questlijst.
+// Quests met deelquests (Recipe for Disaster: 10 QP = 10 deelquests van 1 QP) staan zowel als geheel als per
+// deelquest in de lijst: tel de deelquests (ook bij gedeeltelijke voortgang) en sla het geheel dan over.
 export function myQuestPoints(list, questMap) {
-  return (list || []).filter((q) => questStatus(questMap, q.title) === 'done').reduce((a, q) => a + (q.qp || 0), 0);
+  const items = list || [];
+  const parents = new Set(items.filter((q) => q.title.includes('/')).map((q) => normTitle(q.title.split('/')[0])));
+  return items
+    .filter((q) => !(parents.has(normTitle(q.title)) && !q.title.includes('/')))
+    .filter((q) => questStatus(questMap, q.title) === 'done')
+    .reduce((a, q) => a + (q.qp || 0), 0);
+}
+
+// RuneMetrics (RS3) geeft je echte QP; anders rekenen we het uit de questlijst
+export function playerQuestPoints(player, list, questMap) {
+  const qp = player?.data?.questPoints ?? player?.questPoints;
+  return qp != null ? qp : myQuestPoints(list, questMap);
 }
 
 // ---------- questlijst ----------
@@ -325,8 +361,15 @@ export async function optimalRoute(game, known) {
   return out;
 }
 
-export function questStatus(playerQuests, title) {
-  if (!playerQuests) return null;
+// Deelquests heten op de wiki "Recipe for Disaster/Freeing the Goblin generals", in WikiSync
+// "Recipe for Disaster - Wartface & Bentnoze". Bekende afwijkingen expliciet, de rest via "Freeing/Defeating (the)".
+const SUBQUEST_ALIAS = {
+  'recipe for disaster/freeing the goblin generals': 'Recipe for Disaster - Wartface & Bentnoze',
+  'recipe for disaster/defeating the culinaromancer': 'Recipe for Disaster - Culinaromancer',
+};
+const subKey = (x) => normTitle(String(x).replace(/^(?:freeing|defeating)\s+/i, '').replace(/^the\s+/i, ''));
+
+function matchStatus(playerQuests, title) {
   if (playerQuests[title]) return playerQuests[title];
   const n = normTitle(title.replace('/', ' - '));
   const n2 = normTitle(title);
@@ -342,6 +385,31 @@ export function questStatus(playerQuests, title) {
     for (const [k, v] of Object.entries(playerQuests)) if (bare(k) === b) return v;
   } else {
     for (const [k, v] of Object.entries(playerQuests)) if (k !== title && bare(k) === b) return v;
+  }
+  // Deelquest
+  if (title.includes('/')) {
+    const alias = SUBQUEST_ALIAS[title.toLowerCase()];
+    if (alias && playerQuests[alias]) return playerQuests[alias];
+    const [parent, ...rest] = title.split('/');
+    const np = normTitle(parent);
+    const sk = subKey(rest.join('/'));
+    for (const [k, v] of Object.entries(playerQuests)) {
+      const i = k.indexOf(' - ');
+      if (i > 0 && normTitle(k.slice(0, i)) === np && subKey(k.slice(i + 3)) === sk) return v;
+    }
+  }
+  return null;
+}
+
+export function questStatus(playerQuests, title) {
+  if (!playerQuests || !title) return null;
+  const direct = matchStatus(playerQuests, title);
+  if (direct) return direct;
+  // Geheel zonder eigen WikiSync-sleutel (Recipe for Disaster): afleiden uit de deelquests
+  if (!title.includes('/')) {
+    const np = normTitle(title);
+    const subs = Object.entries(playerQuests).filter(([k]) => { const i = k.indexOf(' - '); return i > 0 && normTitle(k.slice(0, i)) === np; }).map(([, v]) => v);
+    if (subs.length >= 3) return subs.every((v) => v === 'done') ? 'done' : subs.some((v) => v === 'done' || v === 'started') ? 'started' : 'none';
   }
   return null;
 }
@@ -385,7 +453,7 @@ export function parseSkillText(el, skillNames) {
     let m;
     while ((m = re.exec(group))) {
       const mk = marks[+m[1]];
-      found.push({ skill: mk.skill, level: mk.level ?? (m[2] ? +m[2] : null), boostable: /boost/i.test(group) });
+      found.push({ skill: mk.skill, level: mk.level ?? (m[2] ? +m[2] : null), boostable: isBoostable(group) });
     }
     // skills zonder getal erven het level van de buur in dezelfde groep ("Attack 90+, Strength, Hitpoints")
     for (let i = 0; i < found.length; i++) {

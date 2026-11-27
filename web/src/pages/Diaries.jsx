@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useApp } from '../lib/store.jsx';
 import { useAsync } from '../lib/api.js';
 import { loadAllDiaries, judgeDiaries, TIERS } from '../lib/diaries.js';
-import { questList, myQuestPoints } from '../lib/wiki.js';
+import { questList, playerQuestPoints } from '../lib/wiki.js';
 import { osrsCombat } from '../lib/xp.js';
 import { Icon, PageHead, Skel, SkillIcon, Empty, ErrorBox, Bar, delay } from '../components/ui.jsx';
 
@@ -33,7 +33,7 @@ export default function Diaries() {
   const [open, setOpen] = useState(null);
   const [tierF, setTierF] = useState('all');
   const progress = player.data?.diaries || null;
-  const judged = useMemo(() => judgeDiaries(data.data, progress, levels, questMap, myQuestPoints(list.data, questMap), Object.keys(levels).length ? osrsCombat(levels) : null), [data.data, progress, levels, questMap, list.data]);
+  const judged = useMemo(() => judgeDiaries(data.data, progress, levels, questMap, playerQuestPoints(player, list.data, questMap), Object.keys(levels).length ? osrsCombat(levels) : null), [data.data, progress, levels, questMap, list.data]);
   const all = judged.flatMap((r) => TIERS.flatMap((t) => r.tiers[t]));
   const ready = all.filter((t) => t.status === 'ready' && (tierF === 'all' || t.tier === tierF));
   const near = all.filter((t) => t.status === 'near' && (tierF === 'all' || t.tier === tierF)).sort((a, b) => a.gap - b.gap);

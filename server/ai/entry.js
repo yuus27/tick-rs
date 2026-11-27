@@ -2,7 +2,7 @@
 // gebundeld voor Node met een virtuele DOM (happy-dom) in plaats van de browser.
 import { Window } from 'happy-dom';
 import { GAMES } from '../../web/src/lib/games.js';
-import { questList, myQuestPoints, questStatus } from '../../web/src/lib/wiki.js';
+import { questList, myQuestPoints, playerQuestPoints, questStatus } from '../../web/src/lib/wiki.js';
 import { loadAllDiaries, judgeDiaries } from '../../web/src/lib/diaries.js';
 import { GUIDES, loadGuide, judgeSteps } from '../../web/src/lib/pathway.js';
 import { loadMethods } from '../../web/src/lib/intel.js';
@@ -20,6 +20,13 @@ const levelsOf = (player) => Object.fromEntries((player?.skills || []).map((s) =
 const combatOf = (game, lv) => (game === 'osrs' ? osrsCombat(lv) : rs3Combat(lv));
 
 export { GAMES, GUIDES, questStatus };
+
+// Quest points: RuneMetrics (RS3) als die er is, anders opgeteld uit de questlijst + WikiSync
+export async function questPointsOf(game, player) {
+  if (player?.questPoints != null) return player.questPoints;
+  if (!player?.quests) return null;
+  return playerQuestPoints(player, await questList(game), player.quests);
+}
 
 // ---------- money-making ----------
 export async function moneyMaking(game, player, { members = null, limit = 10, includeStretch = true } = {}) {

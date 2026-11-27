@@ -113,7 +113,7 @@ function McpCard() {
     <section className="card col" style={{ gap: 12 }}>
       <div className="row wrap between" style={{ gap: 12 }}>
         <div className="col" style={{ gap: 2, maxWidth: 640 }}>
-          <h3 className="h">AI-koppeling (MCP) <span className="tag acc" style={{ marginLeft: 6 }}>NIEUW</span></h3>
+          <h3 className="h">AI-koppeling (MCP)</h3>
           <span className="small muted">Laat een AI-app zoals Claude Desktop of de ChatGPT-desktopapp je tick.-data lezen: je account, quests, de wiki, GE-prijzen, money-making, diaries en je stappenplan. De AI kan alleen lezen, niets aanpassen, en alleen op deze pc.</span>
         </div>
         <Toggle on={info.enabled} onChange={(v) => set({ enabled: v }, v ? 'AI-koppeling staat aan' : 'AI-koppeling staat uit')} label="AI-koppeling" />

@@ -125,9 +125,35 @@ function setUpd(patch) {
   win?.webContents.send('update', { ...upd, current: app.getVersion(), can: CAN_UPDATE() });
   refreshTray();
 }
+// GitHub geeft af en toe een tijdelijke fout (502/503/504, time-out). Dat is geen echte fout:
+// stil een paar keer opnieuw proberen en pas daarna een begrijpelijke melding tonen.
+const TRANSIENT = /\b5\d\d\b|timed? ?out|ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|net::ERR_|socket hang up/i;
+let updRetrying = false;
+const updError = (e) => {
+  const msg = String(e?.message || e);
+  if (TRANSIENT.test(msg)) return `GitHub reageert even niet (${(msg.match(/\b5\d\d\b/) || ['geen verbinding'])[0]}). Probeer het over een paar minuten opnieuw; tick. zoekt ook zelf elke 4 uur.`;
+  return msg.split('\n')[0].slice(0, 200);
+};
 async function checkUpdates(manual = false) {
   if (!CAN_UPDATE()) { if (manual) shell.openExternal(RELEASES); return; }
-  try { await autoUpdater.checkForUpdates(); } catch (e) { setUpd({ status: 'error', error: String(e?.message || e).slice(0, 200) }); }
+  const waits = [4000, 12000, 30000];
+  for (let i = 0; ; i++) {
+    try {
+      updRetrying = i < waits.length;
+      await autoUpdater.checkForUpdates();
+      updRetrying = false;
+      return;
+    } catch (e) {
+      if (i < waits.length && TRANSIENT.test(String(e?.message || e))) {
+        setUpd({ status: 'checking', error: null });
+        await new Promise((r) => setTimeout(r, waits[i]));
+        continue;
+      }
+      updRetrying = false;
+      setUpd({ status: 'error', error: updError(e) });
+      return;
+    }
+  }
 }
 function setupUpdater() {
   if (!CAN_UPDATE()) return;
@@ -137,7 +163,7 @@ function setupUpdater() {
   autoUpdater.on('update-available', (i) => setUpd({ status: 'downloading', version: i.version, progress: 0 }));
   autoUpdater.on('update-not-available', () => setUpd({ status: 'none' }));
   autoUpdater.on('download-progress', (p) => setUpd({ status: 'downloading', progress: Math.round(p.percent || 0) }));
-  autoUpdater.on('error', (e) => setUpd({ status: 'error', error: String(e?.message || e).slice(0, 200) }));
+  autoUpdater.on('error', (e) => { if (updRetrying && TRANSIENT.test(String(e?.message || e))) return; setUpd({ status: 'error', error: updError(e) }); });
   autoUpdater.on('update-downloaded', async (i) => {
     setUpd({ status: 'ready', version: i.version, progress: 100 });
     const r = await dialog.showMessageBox(win ?? undefined, {

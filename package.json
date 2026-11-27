@@ -1,7 +1,7 @@
 {
   "name": "tick-rs",
   "private": true,
-  "version": "0.4.11",
+  "version": "0.4.12",
   "description": "tick. — persoonlijke OSRS + RS3 cockpit (wiki, quests, skill guides, GE-terminal)",
   "type": "module",
   "scripts": {

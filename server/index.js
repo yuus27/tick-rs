@@ -326,6 +326,23 @@ async function osrsHiscores(enc) {
   return { ok: true, value: { skills, activities: [] }, via: 'CSV-terugval' };
 }
 
+// RS3: XP per maand (laatste 12 maanden) uit RuneMetrics, per skill. Geeft je tempo zonder dat je iets bijhoudt.
+const RM_SKILL_ID = ['Attack', 'Defence', 'Strength', 'Constitution', 'Ranged', 'Prayer', 'Magic', 'Cooking', 'Woodcutting', 'Fletching', 'Fishing', 'Firemaking', 'Crafting', 'Smithing', 'Mining', 'Herblore', 'Agility', 'Thieving', 'Slayer', 'Farming', 'Runecrafting', 'Hunter', 'Construction', 'Summoning', 'Dungeoneering', 'Divination', 'Invention', 'Archaeology', 'Necromancy'];
+app.get('/api/rs3/xpmonthly/:name/:skill', wrap(async (req, res) => {
+  const name = String(req.params.name || '').trim();
+  if (!NAME_RE.test(name)) throw new UpstreamError(400, 'Ongeldige RSN');
+  const id = RM_SKILL_ID.indexOf(req.params.skill);
+  if (id < 0) throw new UpstreamError(400, 'Onbekende skill');
+  const j = await fetchCached(`https://apps.runescape.com/runemetrics/xp-monthly?searchName=${encodeURIComponent(name)}&skillid=${id}`, 3600e3);
+  const m = (j?.monthlyXpGain || [])[0];
+  if (!m) throw new UpstreamError(404, 'Geen maanddata (profiel privé?)');
+  res.json({
+    skill: req.params.skill,
+    totalXp: m.totalXp ?? null,
+    months: (m.monthData || []).map((d) => ({ t: d.timestamp, xp: d.xpGain ?? 0 })).filter((d) => d.t).sort((a, b) => a.t - b.t),
+  });
+}));
+
 app.get('/api/:game/player/:name', wrap(async (req, res) => {
   const game = req.params.game;
   gameOf(req);
@@ -422,7 +439,7 @@ app.get('/api/:game/player/:name', wrap(async (req, res) => {
 }));
 
 // ---------- lokale opslag ----------
-const STORE_KEYS = new Set(['settings', 'watchlist', 'journal', 'goals', 'history', 'quests', 'sessions', 'portfolio', 'paper', 'pathway']);
+const STORE_KEYS = new Set(['settings', 'watchlist', 'journal', 'goals', 'history', 'quests', 'sessions', 'portfolio', 'paper', 'pathway', 'xphist']);
 let writeChain = Promise.resolve();
 
 app.get('/api/store/:key', wrap(async (req, res) => {

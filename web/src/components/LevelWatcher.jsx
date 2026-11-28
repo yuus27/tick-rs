@@ -3,16 +3,19 @@ import { useApp } from '../lib/store.jsx';
 import { skillMax } from '../lib/games.js';
 import { wikiFile, skillCapeFile } from '../lib/theme.js';
 import { playJingle } from './Music.jsx';
+import { recordSnapshot } from '../lib/xptrack.js';
 
 // Ziet level-ups tussen twee keer ophalen van je stats en viert ze. Een nieuwe max (99/110/120) krijgt de skillcape.
 export default function LevelWatcher() {
-  const { player, game, rsn, cfg, toast, settings } = useApp();
+  const { player, game, rsn, cfg, toast, settings, update, xphist } = useApp();
   const p = player.data;
 
   useEffect(() => {
     if (!p?.skills?.length || !rsn) return;
     // Na het wisselen van spel staan heel even nog de stats van het andere spel klaar: die niet vergelijken
     if (!p.skills.every((s) => s.name === 'Overall' || cfg.skills.includes(s.name))) return;
+    // XP-geschiedenis voor de XP-tracker bijwerken (alleen als er iets veranderd is)
+    if (recordSnapshot(xphist, game, rsn, p.skills)) update('xphist', (h) => recordSnapshot(h, game, rsn, p.skills) || h);
     const key = `tick.levels.${game}.${rsn.toLowerCase()}`;
     const now = Object.fromEntries(p.skills.filter((s) => s.level != null).map((s) => [s.name, s.level]));
     let prev = null;

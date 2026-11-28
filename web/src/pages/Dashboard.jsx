@@ -6,6 +6,7 @@ import { useMarket, buildItems } from '../lib/market.js';
 import { Icon, CountUp, Ring, Bar, SkillIcon, ItemIcon, Skel, Empty, Gp, Orb, delay } from '../components/ui.jsx';
 import { wikiFile, skillCapeFile, questIconFile } from '../lib/theme.js';
 import { questList, playerQuestPoints } from '../lib/wiki.js';
+import { goalTargetXp, goalLabel } from '../lib/xptrack.js';
 import { href, wikiHref } from '../lib/router.js';
 import { nl, short, ago, greeting } from '../lib/format.js';
 import { osrsCombat, rs3Combat, xpFor } from '../lib/xp.js';
@@ -156,8 +157,8 @@ export default function Dashboard() {
               if (g.type === 'skill') {
                 const s = skills.find((x) => x.name === g.skill);
                 const start = g.startXp ?? 0;
-                prog = s?.xp != null ? Math.max(0, Math.min(1, (s.xp - start) / Math.max(1, xpFor(g.level) - start))) : 0;
-                label = `${g.skill} → ${g.level}`;
+                prog = s?.xp != null ? Math.max(0, Math.min(1, (s.xp - start) / Math.max(1, goalTargetXp(g) - start))) : 0;
+                label = goalLabel(g);
               } else {
                 const reqs = g.skills || [];
                 const ok = reqs.filter((r) => (levels[r.skill] ?? 1) >= r.level).length;

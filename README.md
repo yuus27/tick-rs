@@ -127,7 +127,8 @@ tick. ziet eruit als een companion-app van de game zelf: **steen en goud** bij O
 ### En verder
 - **Dashboard** met je stats, beste flips, doelen en de laatste game-updates.
 - **Doelen** voor skills en quests, opgeknipt in stappen, met een streak.
-- **Calculators:** *kopen of grinden* (in uren van jóuw tijd), XP, drop-kansen, GE-tax, combat level.
+- **XP-tracker:** zie per skill hoeveel XP je de laatste 24 uur, 7 en 30 dagen haalde, en hoe lang je nog nodig hebt voor een level, je max of 200M XP. Je tempo komt vanzelf uit je sessies en je XP-geschiedenis (bij RS3 ook uit RuneMetrics); invullen hoeft niet.
+- **Calculators:** *kopen of grinden* (in uren van jóuw tijd), drop-kansen, GE-tax, combat level.
 - **Altijd bovenop** (Ctrl+Shift+T): handig op een tweede scherm naast de game.
 
 ### OSRS én RS3

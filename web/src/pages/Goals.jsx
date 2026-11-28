@@ -3,7 +3,9 @@ import { useApp } from '../lib/store.jsx';
 import { Icon, PageHead, Ring, Bar, SkillIcon, Empty, delay, CountUp } from '../components/ui.jsx';
 import { href } from '../lib/router.js';
 import { nl, short } from '../lib/format.js';
-import { xpFor } from '../lib/xp.js';
+import { xpFor, levelFor, MAX_XP } from '../lib/xp.js';
+import { goalTargetXp, goalLabel, parseXp } from '../lib/xptrack.js';
+import { virtualMax } from '../lib/vlevels.js';
 import { goalMax } from '../lib/games.js';
 import { questStatus } from '../lib/wiki.js';
 
@@ -38,7 +40,7 @@ export default function Goals() {
   const skills = player.data?.skills || [];
   const pq = questMap;
   const [skill, setSkill] = useState(cfg.skills[0]);
-  const [lvl, setLvl] = useState(70);
+  const [lvl, setLvl] = useState('70');
   const [rate, setRate] = useState({});
 
   const mine = (goals || []).filter((g) => g.game === game);
@@ -46,7 +48,7 @@ export default function Goals() {
     if (g.type === 'skill') {
       const s = skills.find((x) => x.name === g.skill);
       const start = g.startXp ?? 0;
-      const target = xpFor(g.level, g.skill);
+      const target = goalTargetXp(g);
       const left = s?.xp != null ? Math.max(0, target - s.xp) : null;
       const prog = s?.xp != null ? Math.max(0, Math.min(1, (s.xp - start) / Math.max(1, target - start))) : 0;
       return { ...g, prog, left, done: left === 0, cur: s?.level };
@@ -60,14 +62,25 @@ export default function Goals() {
   const add = (e) => {
     e.preventDefault();
     const s = skills.find((x) => x.name === skill);
-    if (s && s.level >= lvl) { toast(`Je bent al ${s.level} ${skill}`, 'warn'); return; }
-    update('goals', (g) => [...(g || []), { id: Date.now().toString(36), type: 'skill', game, skill, level: Number(lvl), startXp: s?.xp ?? 0, createdAt: Date.now() }]);
+    // Een level (tot de virtuele max) of een XP-bedrag zoals 50m of 200m
+    const v = parseXp(lvl);
+    const vmax = virtualMax(game, skill);
+    if (!v || v < 2) { toast('Vul een level of XP in, bv. 85 of 50m', 'warn'); return; }
+    if (v <= 200) {
+      if (v > vmax) { toast(`${skill} gaat tot level ${vmax}; voor meer vul je XP in, bv. 200m`, 'warn'); return; }
+      if (s && (s.xp != null ? s.xp >= xpFor(v, skill) : s.level >= v)) { toast(`Je bent al ${s.level} ${skill}`, 'warn'); return; }
+      update('goals', (g) => [...(g || []), { id: Date.now().toString(36), type: 'skill', game, skill, level: v, startXp: s?.xp ?? 0, createdAt: Date.now() }]);
+    } else {
+      const xp = Math.min(MAX_XP, v);
+      if (s?.xp != null && s.xp >= xp) { toast(`Je hebt al ${nl(s.xp)} XP in ${skill}`, 'warn'); return; }
+      update('goals', (g) => [...(g || []), { id: Date.now().toString(36), type: 'skill', game, skill, level: Math.min(goalMax(game, skill), levelFor(xp, skill, goalMax(game, skill))), targetXp: xp, startXp: s?.xp ?? 0, createdAt: Date.now() }]);
+    }
   };
   const del = (id) => update('goals', (g) => (g || []).filter((x) => x.id !== id));
   const avg = rows.length ? rows.reduce((a, r) => a + r.prog, 0) / rows.length : 0;
 
   // weekplan: openstaande XP per skill-doel, verdeeld over stappen
-  const plan = rows.flatMap((r) => r.type === 'skill' && !r.done && r.left ? [{ key: r.id, label: `${r.skill} → ${r.level}`, skill: r.skill, xp: r.left }] : (r.reqs || []).filter((q) => !q.ok).map((q) => ({ key: r.id + q.skill, label: `${q.skill} ${q.mine ?? '?'} → ${q.level} (voor ${r.title})`, skill: q.skill, xp: q.left })));
+  const plan = rows.flatMap((r) => r.type === 'skill' && !r.done && r.left ? [{ key: r.id, label: goalLabel(r), skill: r.skill, xp: r.left }] : (r.reqs || []).filter((q) => !q.ok).map((q) => ({ key: r.id + q.skill, label: `${q.skill} ${q.mine ?? '?'} → ${q.level} (voor ${r.title})`, skill: q.skill, xp: q.left })));
 
   return (
     <div className="page">
@@ -82,10 +95,10 @@ export default function Goals() {
           <h2 className="h">Nieuw skill-doel</h2>
           <form onSubmit={add} className="row wrap">
             <select className="input" style={{ flex: '1 1 180px' }} value={skill} onChange={(e) => setSkill(e.target.value)} aria-label="Skill">{cfg.skills.map((s) => <option key={s}>{s}</option>)}</select>
-            <input className="input mono" style={{ width: 110 }} type="number" min="2" max={goalMax(game, skill)} value={lvl} onChange={(e) => setLvl(Math.max(2, Math.min(goalMax(game, skill), Number(e.target.value) || 2)))} aria-label="Doel-level" />
+            <input className="input mono" style={{ width: 130 }} type="text" inputMode="decimal" value={lvl} onChange={(e) => setLvl(e.target.value)} placeholder="85 of 200m" aria-label="Doel: level of XP" />
             <button className="btn primary" type="submit"><Icon name="plus" size={16} /> Toevoegen</button>
           </form>
-          <span className="small muted">Quest-doelen voeg je toe vanaf een questpagina (“Maak er een doel van”). De skill-requirements komen dan automatisch mee.</span>
+          <span className="small muted">Doel als level (tot {virtualMax(game, skill)}) of als XP, bijvoorbeeld <span className="mono">50m</span> of <span className="mono">200m</span>. Quest-doelen voeg je toe vanaf een questpagina (“Maak er een doel van”). De skill-requirements komen dan automatisch mee.</span>
           <Streak days={settings.days || []} />
         </div>
       </section>
@@ -99,7 +112,7 @@ export default function Goals() {
               <a className="row" style={{ gap: 12, color: 'var(--tx)' }} href={r.type === 'skill' ? href('skills', r.skill) : href('quests', r.title)}>
                 <span className="icon-tile" style={{ width: 44, height: 44 }}>{r.type === 'skill' ? <SkillIcon skill={r.skill} size={26} /> : <Icon name="quest" size={20} style={{ color: 'var(--acc)' }} />}</span>
                 <div className="col" style={{ gap: 1 }}>
-                  <span className="num" style={{ fontSize: 18 }}>{r.type === 'skill' ? `${r.skill} ${r.level}` : r.title}</span>
+                  <span className="num" style={{ fontSize: 18 }}>{r.type === 'skill' ? goalLabel(r).replace(' → ', ' ') : r.title}</span>
                   <span className="small muted">{r.type === 'skill' ? (r.cur ? `nu level ${r.cur}` : '–') : r.status === 'done' ? 'voltooid' : r.status === 'started' ? 'bezig' : `${(r.reqs || []).filter((q) => !q.ok).length} skill-reqs open`}</span>
                 </div>
               </a>

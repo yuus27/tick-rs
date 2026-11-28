@@ -5,6 +5,7 @@ import { GAMES } from '../lib/games.js';
 import { Icon, PageHead, Toggle } from '../components/ui.jsx';
 import { nl } from '../lib/format.js';
 import { virtualOn } from '../lib/vlevels.js';
+import { themeOf } from '../lib/theme.js';
 
 function RsnField({ g }) {
   const { settings, update, toast, loadPlayer, game } = useApp();
@@ -215,7 +216,17 @@ export default function Settings() {
       </section>
       <section className="grid g2">
         <div className="card col" style={{ gap: 14 }}>
-          <h3 className="h">Meldingen en weergave</h3>
+          <h3 className="h">Thema</h3>
+          <div className="row between wrap">
+            <span>Uiterlijk van tick.</span>
+            <div className="seg" role="group" aria-label="Thema">
+              {[['ingame', 'In-game'], ['strak', 'Strak']].map(([k, l]) => <button key={k} type="button" className={themeOf(settings) === k ? 'on' : ''} aria-pressed={themeOf(settings) === k} onClick={() => update('settings', (s) => ({ ...s, theme: k }))}>{l}</button>)}
+            </div>
+          </div>
+          <span className="small dim">In-game: steen en goud bij OSRS, staal en goud bij RS3, met echte game-plaatjes (munten, capes, NPC's). Strak: het rustige, minimale uiterlijk.</span>
+          <div className="row between"><span>RuneScape-muziek</span><Toggle on={!!settings.music?.on} onChange={(v) => update('settings', (s) => ({ ...s, music: { vol: 0.35, ...(s.music || {}), on: v } }))} label="Muziek" /></div>
+          <span className="small dim">Gestreamd van de RuneScape Wiki. Volume en nummer regel je met de muziekknop in de bovenbalk.</span>
+          <h3 className="h" style={{ marginTop: 6 }}>Meldingen en weergave</h3>
           <div className="row between"><span>Windows-meldingen bij prijsalerts</span><Toggle on={!!settings.notify} onChange={askNotify} label="Windows-meldingen" /></div>
           <span className="small dim">Alerts stel je in per item in de GE-terminal. Ze werken zolang tick. open staat.</span>
           <h3 className="h" style={{ marginTop: 6 }}>Virtual levels</h3>

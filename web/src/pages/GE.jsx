@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../lib/store.jsx';
 import { useAsync } from '../lib/api.js';
 import { useMarket, buildItems, timeseries, RANGES } from '../lib/market.js';
-import { Icon, PageHead, SkelRows, ErrorBox, Empty, ItemIcon, Drawer, AreaChart, CountUp, delay } from '../components/ui.jsx';
+import { Icon, PageHead, SkelRows, ErrorBox, Empty, ItemIcon, Drawer, AreaChart, CountUp, Gp, delay } from '../components/ui.jsx';
 import { nl, short, pct, ago } from '../lib/format.js';
 import { wikiHref } from '../lib/router.js';
 import FUImport from '../components/FUImport.jsx';
@@ -83,7 +83,7 @@ export function ItemDrawer({ item, onClose, natureLow }) {
           ['Break-even verkoop', nl(breakeven)],
           ['Buy limit / 4u', item.limit ? nl(item.limit) : 'onbekend'],
           ['Volume (1u)', nl(item.vol)],
-          ['Winst/4u (realistisch)', item.profit != null ? short(item.profit) : '–', 'var(--up)'],
+          ['Winst/4u (realistisch)', item.profit != null ? <Gp value={item.profit} sign size={16} /> : '–', 'var(--up)'],
           ...(game === 'osrs' ? [['High alch', item.highalch ? `${nl(item.highalch)} (${alchProfit != null ? (alchProfit > 0 ? '+' : '') + nl(alchProfit) : '–'})` : '–', alchProfit > 0 ? 'var(--up)' : undefined]] : []),
         ].map(([l, v, c]) => (
           <div key={l} style={{ padding: 12, borderRadius: 12, background: 'var(--bg2)', border: '1px solid var(--line)' }}>
@@ -231,7 +231,7 @@ export default function GE({ query }) {
                     <td className="r">{pct(i.roi, 2)}</td>
                     <td className="r dim">{i.limit ? nl(i.limit) : '–'}</td>
                     <td className="r">{short(i.vol)}</td>
-                    <td className="r up" style={{ fontWeight: 600 }}>{preset === 'alch' && !q ? '+' + nl(i.alch) : i.profit > 0 ? '+' + short(i.profit) : '–'}</td>
+                    <td className="r up" style={{ fontWeight: 600 }}>{preset === 'alch' && !q ? '+' + nl(i.alch) : i.profit > 0 ? <Gp value={i.profit} sign size={14} /> : '–'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -266,6 +266,7 @@ function Journal({ byId }) {
   };
   const del = (id) => update('journal', (j) => (j || []).filter((x) => x.id !== id));
   const total = mine.reduce((a, j) => a + (j.sell - tax(j.sell) - j.buy) * j.qty, 0);
+  const byName = useMemo(() => Object.fromEntries(Object.values(byId || {}).map((i) => [i.name.toLowerCase(), i])), [byId]);
 
   return (
     <section className="card rise" style={{ animationDelay: '.2s' }}>
@@ -285,6 +286,24 @@ function Journal({ byId }) {
         <input className="input mono" type="number" placeholder="Verkoopprijs" value={form.sell} onChange={(e) => setForm({ ...form, sell: e.target.value })} aria-label="Verkoopprijs" />
         <button className="btn primary" type="submit"><Icon name="plus" size={16} /> Log</button>
       </form>
+      {mine.length > 0 && (
+        <div className="ge-slots">
+          {mine.slice(0, 4).map((j) => {
+            const it = byName[j.name.toLowerCase()];
+            const p = (j.sell - tax(j.sell) - j.buy) * j.qty;
+            return (
+              <div key={j.id} className="ge-slot">
+                <span className="ge-slot-ico"><ItemIcon item={it || { name: j.name }} size={30} /></span>
+                <div className="grow col" style={{ gap: 4, minWidth: 0 }}>
+                  <div className="row between" style={{ gap: 8 }}><span className="trunc" style={{ fontWeight: 600 }}>{j.name}</span><span className="small up" style={{ fontWeight: 700 }}>KLAAR</span></div>
+                  <div className="ge-slot-bar"><i style={{ width: '100%' }} /></div>
+                  <div className="row between small"><span className="muted">{nl(j.qty)} × {short(j.buy)} → {short(j.sell)}</span><Gp value={p} sign size={14} /></div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
       {!mine.length ? <Empty icon="book" title="Nog geen flips">Log je trades om te zien welke items en strategieën echt geld opleveren.</Empty> : (
         <div className="scroll-x">
           <table className="dt">

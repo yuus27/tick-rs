@@ -6,6 +6,7 @@ import { nl, short } from '../lib/format.js';
 import { MAX_XP } from '../lib/xp.js';
 import { skillView, virtualOn } from '../lib/vlevels.js';
 import { SKILL_COLORS } from '../lib/games.js';
+import { wikiFile, skillCapeFile } from '../lib/theme.js';
 
 export default function Skills() {
   const { cfg, player, rsn, game, settings, update } = useApp();
@@ -53,13 +54,14 @@ export default function Skills() {
 
       <section className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 12 }}>
         {rows.map((r, i) => (
-          <a key={r.name} href={href('skills', r.name)} className="card hover rise" style={{ ...delay(i, 0.05, 0.02), padding: 16, color: 'var(--tx)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <a key={r.name} href={href('skills', r.name)} className={`card hover rise ${r.realMaxed ? 'skill-maxed' : ''}`} style={{ ...delay(i, 0.05, 0.02), padding: 16, color: 'var(--tx)', display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div className="row" style={{ gap: 12 }}>
               <span className="icon-tile" style={{ width: 42, height: 42, borderColor: `color-mix(in srgb, ${SKILL_COLORS[r.name] || '#888'} 40%, var(--line2))` }}><SkillIcon skill={r.name} size={26} /></span>
               <div className="grow col" style={{ gap: 1, minWidth: 0 }}>
                 <span className="trunc" style={{ fontWeight: 600 }}>{r.name}</span>
                 <span className="small muted">{r.xp != null ? `${short(r.xp)} XP` : '—'}{r.f2p ? ' · F2P' : ''}</span>
               </div>
+              {r.realMaxed && <img className="skill-cape" src={wikiFile(game, skillCapeFile(game, r.name))} alt={`${r.name} cape`} referrerPolicy="no-referrer" style={{ height: 30 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
               <span className="num" style={{ flex: 'none', fontSize: r.shown >= 100 ? 24 : 28, color: r.realMaxed ? 'var(--acc)' : 'var(--tx)' }} title={r.virt ? `Virtueel level · echt level ${r.level}` : undefined}>{r.shown ?? '–'}{r.top > 99 && <span className="dim" style={{ fontSize: 13 }}>/{r.top}</span>}</span>
             </div>
             <Bar value={r.prog} color={SKILL_COLORS[r.name]} label={r.toNext != null ? `${nl(r.toNext)} XP tot ${r.shown + 1 > r.cap ? 'virtueel ' : ''}${r.shown + 1}` : r.maxed && r.xp != null ? `${short(r.xp)} / 200M XP` : null} />

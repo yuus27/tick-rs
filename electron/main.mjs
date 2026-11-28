@@ -78,6 +78,8 @@ async function createWindow() {
       contextIsolation: true,
       sandbox: true,
       nodeIntegration: false,
+      // Muziek mag starten zonder eerst te klikken (alleen als je hem zelf hebt aangezet)
+      autoplayPolicy: 'no-user-gesture-required',
     },
   });
   if (saved.maximized) win.maximize();

@@ -1,0 +1,176 @@
+/* =====================================================================
+   Gedeelde onderdelen (beide thema's): GP, orbs, muziek, mijlpaal-toast
+   ===================================================================== */
+@font-face { font-family: 'RuneScape'; src: url('./assets/fonts/runescape.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'RuneScape Bold'; src: url('./assets/fonts/runescape_bold.ttf') format('truetype'); font-display: swap; }
+
+.gp { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.gp img { image-rendering: pixelated; flex: none; }
+
+.orb-stat { display: inline-flex; align-items: center; gap: 10px; }
+.orb-ball { width: 50px; height: 50px; border-radius: 50%; flex: none; display: grid; place-items: center; background: radial-gradient(circle at 50% 32%, #c83a2a, #6e130b); border: 3px solid var(--s2); box-shadow: 0 0 0 1px var(--line2), inset 0 -7px 12px rgba(0,0,0,.45), 0 8px 20px -10px rgba(0,0,0,.8); }
+.orb-ball img { max-width: 26px; max-height: 26px; image-rendering: pixelated; }
+.orb-stat.pray .orb-ball { background: radial-gradient(circle at 50% 32%, #4fd2e8, #0e5a6a); }
+.orb-stat.cmb .orb-ball { background: radial-gradient(circle at 50% 32%, #c98a2a, #5c3a0a); }
+.orb-stat.qp .orb-ball { background: radial-gradient(circle at 50% 32%, #4a4ab0, #14143d); }
+.orb-val { font-family: var(--f-head); font-size: 21px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.orb-lbl { font-size: 11px; color: var(--dim); }
+.orbs { display: flex; flex-wrap: wrap; gap: 18px; }
+
+.music { position: relative; display: inline-flex; align-items: center; gap: 6px; }
+.music-now { display: inline-flex; align-items: center; gap: 8px; max-width: 170px; height: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line2); background: var(--s1); color: var(--tx2); font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.music-now:hover { color: var(--tx); border-color: var(--acc); }
+.eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; flex: none; }
+.eq i { width: 3px; height: 4px; border-radius: 1px; background: var(--acc); }
+.eq.on i { animation: eq 0.9s ease-in-out infinite; }
+.eq.on i:nth-child(2) { animation-delay: .2s; }
+.eq.on i:nth-child(3) { animation-delay: .4s; }
+@keyframes eq { 0%,100% { height: 3px; } 50% { height: 12px; } }
+.music-pop { position: absolute; top: 44px; right: 0; z-index: 40; width: 300px; display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; background: var(--s1); border: 1px solid var(--line2); box-shadow: 0 30px 70px -20px rgba(0,0,0,.9); animation: pop .25s var(--ease); }
+.music-title { font-family: var(--f-head); font-size: 20px; font-weight: 700; color: var(--acc); }
+.music-pop input[type=range] { accent-color: var(--acc); }
+
+.toast.milestone { position: relative; overflow: hidden; align-items: center; gap: 14px; min-width: 320px; padding: 16px 18px; border-color: color-mix(in srgb, var(--acc) 70%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--acc) 30%, transparent), 0 0 40px -6px color-mix(in srgb, var(--acc) 45%, transparent), 0 24px 60px -20px rgba(0,0,0,.9); animation: toastIn .55s var(--spring), msGlow 2.4s ease-in-out .6s 2; }
+.ms-glow { width: 58px; height: 58px; flex: none; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, color-mix(in srgb, var(--acc) 45%, transparent), transparent 70%); }
+.ms-glow img { max-width: 40px; max-height: 54px; image-rendering: pixelated; animation: msBob 1.6s ease-in-out infinite; }
+.ms-eyebrow { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: var(--acc); }
+.ms-title { font-family: var(--f-head); font-size: 20px; font-weight: 700; color: var(--tx); }
+.ms-spark { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.18) 50%, transparent 70%); transform: translateX(-100%); animation: msSweep 1.6s .4s ease-out 2; }
+@keyframes msSweep { to { transform: translateX(100%); } }
+@keyframes msBob { 50% { transform: translateY(-3px) scale(1.04); } }
+@keyframes msGlow { 50% { box-shadow: 0 0 0 1px var(--acc), 0 0 60px 0 color-mix(in srgb, var(--acc) 55%, transparent), 0 24px 60px -20px rgba(0,0,0,.9); } }
+
+.skill-cape { margin-left: auto; height: 22px; width: auto; image-rendering: pixelated; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--acc) 60%, transparent)); }
+
+/* NPC met tekstballon voor lege schermen */
+.empty.npc { flex-direction: row; align-items: flex-start; justify-content: center; text-align: left; gap: 16px; padding: 26px 18px; }
+.npc-head { width: auto; height: 74px; flex: none; image-rendering: pixelated; animation: float 4s ease-in-out infinite; }
+.npc-say { position: relative; max-width: 440px; padding: 12px 15px; border-radius: 12px; color: var(--tx2); }
+.npc-title { font-weight: 700; font-size: 15px; color: var(--tx); margin-bottom: 2px; }
+
+/* =====================================================================
+   IN-GAME THEMA
+   ===================================================================== */
+html[data-theme='ingame'] {
+  --f-num: 'RuneScape', var(--f-head);
+  --r: 14px;
+}
+html[data-theme='ingame'][data-game='osrs'] {
+  --bg: #0B0906; --bg2: #15110C; --s1: #2A231A; --s2: #332A1F; --s3: #3D3226;
+  --line: #463A28; --line2: #5D4C34;
+  --tx: #F2E9D6; --tx2: #DDD0B6; --mut: #BFAF92; --dim: #A3937A;
+  --up: #3FE06A; --down: #FF7A5C; --blue: #7FB2FF;
+  --panel: linear-gradient(180deg, #3A3126 0%, #2C251C 100%);
+  --well: linear-gradient(180deg, #221C14, #1A150F);
+  --bevel: inset 0 1px 0 rgba(255,220,160,.10), inset 0 -2px 0 rgba(0,0,0,.35);
+  --side-bg: linear-gradient(180deg, #1B160F, #120E0A);
+  --glow: rgba(255,170,60,.10);
+  --tone-y: #FFFF00; --tone-k: #FFFFFF; --tone-m: #00FF80;
+  --q-done: #2EDB2E; --q-start: #FFFF00; --q-none: #FF5A4D;
+  --title: #FF981F;
+}
+html[data-theme='ingame'][data-game='rs3'] {
+  --bg: #070C14; --bg2: #0D1624; --s1: #172538; --s2: #1C2B3F; --s3: #233650;
+  --line: #2A4058; --line2: #35516F;
+  --tx: #E8F0FA; --tx2: #CBD8E8; --mut: #9FB3CB; --dim: #8599B2;
+  --up: #4BE08A; --down: #FF8466; --blue: #7FC2FF;
+  --panel: linear-gradient(180deg, #1D2C41 0%, #142134 100%);
+  --well: linear-gradient(180deg, #0E1826, #0B1420);
+  --bevel: inset 0 1px 0 rgba(170,210,255,.12), inset 0 -2px 0 rgba(0,0,0,.35);
+  --side-bg: linear-gradient(180deg, #0D1625, #09111C);
+  --glow: rgba(80,150,255,.13);
+  --tone-y: #FFE36B; --tone-k: #FFFFFF; --tone-m: #4BFF9A;
+  --q-done: #4BE08A; --q-start: #FFE36B; --q-none: #FF6B5E;
+  --title: #F0C15A;
+}
+
+html[data-theme='ingame'] body { background: radial-gradient(1200px 620px at 72% -12%, var(--glow), transparent 60%), var(--bg); }
+html[data-theme='ingame'] .ambient .orb.b { opacity: .03; }
+html[data-theme='ingame'] .ambient .grain { opacity: .05; }
+
+/* Panelen: steen (OSRS) / staal (RS3) met een lichte bevel */
+html[data-theme='ingame'] .card { background: var(--panel); border-color: var(--line2); box-shadow: var(--bevel), 0 14px 34px -18px rgba(0,0,0,.75); }
+html[data-theme='ingame'] .card.hover:hover { border-color: color-mix(in srgb, var(--acc) 45%, var(--line2)); box-shadow: var(--bevel), 0 0 0 1px color-mix(in srgb, var(--acc) 20%, transparent), 0 22px 50px -22px rgba(0,0,0,.9); }
+html[data-theme='ingame'] .card.accent { background: linear-gradient(180deg, var(--acc-soft), transparent 70%), var(--panel); border-color: color-mix(in srgb, var(--acc) 55%, var(--line2)); }
+html[data-theme='ingame'] .side { background: var(--side-bg); border-right-color: var(--line); backdrop-filter: none; }
+html[data-theme='ingame'] .top { background: color-mix(in srgb, var(--bg) 82%, transparent); border-bottom-color: var(--line); }
+html[data-theme='ingame'] .me, html[data-theme='ingame'] .switch, html[data-theme='ingame'] .seg, html[data-theme='ingame'] .gameswitch,
+html[data-theme='ingame'] .search-box, html[data-theme='ingame'] .input, html[data-theme='ingame'] .skill-tile, html[data-theme='ingame'] .icon-tile {
+  background: var(--well); border-color: var(--line); box-shadow: inset 0 2px 4px rgba(0,0,0,.45);
+}
+html[data-theme='ingame'] .skill-tile:hover { background: var(--well); border-color: color-mix(in srgb, var(--acc) 55%, var(--line2)); }
+html[data-theme='ingame'] .skill-tile.maxed { border-color: color-mix(in srgb, var(--acc) 80%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--acc) 30%, transparent), 0 0 22px -4px color-mix(in srgb, var(--acc) 45%, transparent), inset 0 2px 4px rgba(0,0,0,.45); background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 16%, #000), color-mix(in srgb, var(--acc) 6%, #000)); }
+html[data-theme='ingame'] .skill-tile img, html[data-theme='ingame'] .icon-tile img, html[data-theme='ingame'] .nav img { image-rendering: pixelated; }
+
+/* Knoppen en schakelaars in goud */
+html[data-theme='ingame'] .btn { background: var(--panel); border-color: var(--line2); box-shadow: var(--bevel); }
+html[data-theme='ingame'] .btn:hover { border-color: color-mix(in srgb, var(--acc) 60%, var(--line2)); }
+html[data-theme='ingame'] .btn.primary, html[data-theme='ingame'] .chip.on, html[data-theme='ingame'] .switch .knob,
+html[data-theme='ingame'] .gameswitch button.on {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 82%, #fff), var(--acc) 45%, color-mix(in srgb, var(--acc) 78%, #6b3c00));
+  border-color: color-mix(in srgb, var(--acc) 70%, #5a3300); color: var(--acc-ink);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 8px 22px -12px var(--acc);
+}
+html[data-theme='ingame'] .btn.ghost { background: transparent; box-shadow: none; }
+html[data-theme='ingame'] .gameswitch button.osrs:not(.on):hover, html[data-theme='ingame'] .gameswitch button.rs3:not(.on):hover { color: var(--acc); }
+html[data-theme='ingame'] .seg button.on { background: var(--panel); color: var(--acc); box-shadow: inset 0 0 0 1px var(--line2); }
+html[data-theme='ingame'] .toggle { background: #1a150f; box-shadow: inset 0 2px 4px rgba(0,0,0,.5); }
+html[data-theme='ingame'] .toggle.on { background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 85%, #fff), var(--acc)); }
+html[data-theme='ingame'] .nav.on { background: linear-gradient(90deg, var(--acc-soft), transparent); border-color: var(--line2); color: color-mix(in srgb, var(--acc) 70%, #fff); }
+html[data-theme='ingame'] .nav:hover { background: color-mix(in srgb, var(--acc) 7%, transparent); }
+
+/* Koppen en cijfers */
+html[data-theme='ingame'] h1.title { color: var(--title); text-shadow: 0 2px 0 #000, 0 0 30px color-mix(in srgb, var(--title) 25%, transparent); letter-spacing: -.02em; }
+html[data-theme='ingame'] .eyebrow { color: color-mix(in srgb, var(--acc) 60%, var(--mut)); }
+html[data-theme='ingame'] .num, html[data-theme='ingame'] .orb-val { font-family: var(--f-num); letter-spacing: 0; font-weight: 400; text-shadow: 1px 1px 0 #000; }
+html[data-theme='ingame'] .stat .val { font-size: 34px; }
+html[data-theme='ingame'] .tag.acc { background: var(--acc-soft); }
+
+/* Balken: donkere put met een glanzende vulling */
+html[data-theme='ingame'] .bar { background: #0b0805; border: 1px solid #000; box-shadow: inset 0 1px 3px rgba(0,0,0,.7); }
+html[data-theme='ingame'][data-game='rs3'] .bar { background: #070d16; }
+html[data-theme='ingame'] .bar > i { box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 -2px 0 rgba(0,0,0,.25); }
+html[data-theme='ingame'] .bar.big > span { font-family: var(--f-num); font-size: 15px; font-weight: 400; letter-spacing: .02em; text-shadow: 1px 1px 0 #000; }
+
+/* Tabellen en lijsten */
+html[data-theme='ingame'] .dt th { background: var(--s1); }
+html[data-theme='ingame'] .dt td { border-bottom-color: color-mix(in srgb, var(--line) 60%, transparent); }
+html[data-theme='ingame'] .dt tbody tr:hover, html[data-theme='ingame'] .list-row:hover { background: color-mix(in srgb, var(--acc) 7%, transparent); }
+html[data-theme='ingame'] .suggest, html[data-theme='ingame'] .drawer, html[data-theme='ingame'] .music-pop, html[data-theme='ingame'] .toast { background: var(--panel); border-color: var(--line2); }
+
+/* GP in game-kleuren */
+html[data-theme='ingame'] .gp-n { font-family: var(--f-num); font-size: 1.15em; text-shadow: 1px 1px 0 #000; }
+html[data-theme='ingame'] .gp-y .gp-n { color: var(--tone-y); }
+html[data-theme='ingame'] .gp-k .gp-n { color: var(--tone-k); }
+html[data-theme='ingame'] .gp-m .gp-n { color: var(--tone-m); }
+
+/* Questkleuren zoals de questlijst in de game */
+html[data-theme='ingame'] .q-done { color: var(--q-done) !important; }
+html[data-theme='ingame'] .q-started { color: var(--q-start) !important; }
+html[data-theme='ingame'] .q-none { color: var(--q-none) !important; }
+
+/* NPC-tekstballon als perkament */
+html[data-theme='ingame'][data-game='osrs'] .npc-say { background: #D9C9A3; color: #2A1F10; border: 2px solid #7A6440; box-shadow: inset 0 1px 0 rgba(255,255,255,.4); }
+html[data-theme='ingame'][data-game='osrs'] .npc-title { color: #1E1408; }
+html[data-theme='ingame'][data-game='rs3'] .npc-say { background: #12202F; border: 1px solid #35516F; }
+html[data-theme='ingame'] .npc-say .btn { color: var(--tx); }
+html[data-theme='ingame'][data-game='osrs'] .npc-say a:not(.btn) { color: #7A3E00; }
+
+/* Orbs in het thema */
+html[data-theme='ingame'] .orb-ball { border-color: var(--s2); box-shadow: 0 0 0 1px var(--line2), inset 0 -7px 12px rgba(0,0,0,.45), 0 8px 20px -10px rgba(0,0,0,.8); }
+html[data-theme='ingame'] .orb-stat.hp .orb-val, html[data-theme='ingame'] .orb-stat.pray .orb-val { color: #00FF00; }
+html[data-theme='ingame'] .orb-stat.qp .orb-val, html[data-theme='ingame'] .orb-stat.cmb .orb-val { color: var(--tone-y); }
+
+/* Strak thema: GP-tekst gewoon in de tekstkleur */
+html[data-theme='strak'] .npc-say { background: var(--s2); border: 1px solid var(--line2); }
+
+/* Gemaxte skill-kaart: gouden rand */
+html[data-theme='ingame'] .card.skill-maxed { border-color: color-mix(in srgb, var(--acc) 75%, transparent); box-shadow: var(--bevel), 0 0 0 1px color-mix(in srgb, var(--acc) 25%, transparent), 0 0 34px -10px color-mix(in srgb, var(--acc) 55%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 10%, transparent), transparent 60%), var(--panel); }
+
+/* GE-slots: laatste flips zoals de offers in de Grand Exchange */
+.ge-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.ge-slot { display: flex; gap: 12px; align-items: center; padding: 11px 12px; border-radius: 12px; background: var(--bg2); border: 1px solid var(--line); }
+.ge-slot-ico .icon-tile { width: 48px; height: 48px; }
+.ge-slot-bar { height: 10px; border-radius: 3px; background: #0b0805; border: 1px solid #000; overflow: hidden; }
+.ge-slot-bar > i { display: block; height: 100%; background: linear-gradient(180deg, #2fd35a, #138a32); box-shadow: inset 0 1px 0 rgba(255,255,255,.35); }
+html[data-theme='ingame'] .ge-slot { background: var(--well); box-shadow: inset 0 2px 4px rgba(0,0,0,.45); }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../lib/store.jsx';
 import { snapshot, diff } from '../lib/session.js';
-import { Icon, PageHead, SkillIcon, CountUp, Empty, delay } from '../components/ui.jsx';
+import { Icon, PageHead, SkillIcon, CountUp, Empty, Gp, delay } from '../components/ui.jsx';
 import { nl, short } from '../lib/format.js';
 
 const fmtDur = (ms) => { const m = Math.max(0, Math.round(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}u ${String(m % 60).padStart(2, '0')}m` : `${m} min`; };
@@ -46,7 +46,7 @@ function Gains({ d, ms }) {
         <Stat label="XP" value={d.xp ? <>+<CountUp value={d.xp} format={short} /></> : '–'} sub={xph ? `${short(xph)} XP/u` : null} cls={d.xp ? 'up' : ''} />
         <Stat label="Levels" value={d.levels ? `+${d.levels}` : '0'} sub={d.skills.filter((s) => s.to > s.from).map((s) => s.skill).slice(0, 3).join(', ') || null} cls={d.levels ? 'acc' : ''} />
         <Stat label="Quests" value={d.quests.length} sub={d.quests.slice(0, 2).join(', ') || null} />
-        <Stat label="GE-winst" value={d.flips ? (d.gp >= 0 ? '+' : '') + short(d.gp) : '–'} sub={d.flips ? `${d.flips} flip${d.flips === 1 ? '' : 's'} uit je journaal` : 'geen flips gelogd'} cls={d.gp > 0 ? 'up' : d.gp < 0 ? 'down' : ''} />
+        <Stat label="GE-winst" value={d.flips ? <Gp value={d.gp} sign size={22} /> : '–'} sub={d.flips ? `${d.flips} flip${d.flips === 1 ? '' : 's'} uit je journaal` : 'geen flips gelogd'} cls={d.gp > 0 ? 'up' : d.gp < 0 ? 'down' : ''} />
       </div>
       {d.skills.length > 0 && (
         <div className="card col" style={{ gap: 8 }}>
@@ -110,7 +110,7 @@ export default function Sessions() {
         <Stat label="Sessies" value={hist.length} sub={fmtDur(totals.ms) + ' gespeeld'} />
         <Stat label="XP totaal" value={totals.xp ? '+' + short(totals.xp) : '–'} sub={totals.ms ? `${short(perHour(totals.xp, totals.ms) || 0)} XP/u gemiddeld` : null} />
         <Stat label="Levels" value={totals.levels} sub={`${totals.quests} quests`} />
-        <Stat label="GE-winst" value={totals.gp ? short(totals.gp) : '–'} cls={totals.gp > 0 ? 'up' : ''} />
+        <Stat label="GE-winst" value={totals.gp ? <Gp value={totals.gp} size={22} /> : '–'} cls={totals.gp > 0 ? 'up' : ''} />
       </section>
 
       <section className="card rise col" style={{ gap: 10, animationDelay: '.15s' }}>

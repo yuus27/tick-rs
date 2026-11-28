@@ -3,6 +3,7 @@ import { useApp } from '../lib/store.jsx';
 import { useSession } from '../pages/Sessions.jsx';
 import { searchWiki } from '../lib/wiki.js';
 import { Icon, SkillIcon } from './ui.jsx';
+import { MusicButton } from './Music.jsx';
 import { href, navigate, wikiHref } from '../lib/router.js';
 
 const PAGES = [
@@ -105,6 +106,7 @@ export default function Topbar() {
       <SessionPill />
       {upd?.status === 'ready' && <button className="btn sm primary" onClick={() => window.tick.update.install()} title="Herstart tick. om de update te installeren"><Icon name="spark" size={14} /> Update {upd.version}: herstart</button>}
       {upd?.status === 'downloading' && <span className="tag acc" title="Update wordt gedownload">Update {upd.version} · {upd.progress}%</span>}
+      <MusicButton />
       <div className="gameswitch" role="tablist" aria-label="Spel kiezen">
         <button role="tab" aria-selected={game === 'osrs'} className={`osrs ${game === 'osrs' ? 'on' : ''}`} onClick={() => setGame('osrs')} title="Old School RuneScape">OSRS</button>
         <button role="tab" aria-selected={game === 'rs3'} className={`rs3 ${game === 'rs3' ? 'on' : ''}`} onClick={() => setGame('rs3')} title="RuneScape 3">RS3</button>

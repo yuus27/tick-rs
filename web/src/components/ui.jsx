@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { initials } from '../lib/format.js';
+import { initials, short as shortGp } from '../lib/format.js';
+import { themeOf, wikiFile, coinsFile, gpTone, npcFile } from '../lib/theme.js';
 import { useApp } from '../lib/store.jsx';
 
 // ---------- iconen (lijnstijl) ----------
@@ -36,6 +37,10 @@ const P = {
   info: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18 M12 11v6 M12 7.5v.5',
   map: 'M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z M9 4v14 M15 6v14',
   steps: 'M3 20h5v-5h5v-5h5V5h3',
+  music: 'M9 18V5l12-2v13 M9 18a3 3 0 1 1-6 0a3 3 0 1 1 6 0 M21 16a3 3 0 1 1-6 0a3 3 0 1 1 6 0',
+  mute: 'M11 5L6 9H2v6h4l5 4z M22 9l-6 6 M16 9l6 6',
+  next: 'M5 4l10 8-10 8z M19 5v14',
+  prev: 'M19 20L9 12l10-8z M5 19V5',
 };
 export function Icon({ name, size = 18, stroke = 1.9, fill = 'none', className, style }) {
   return (
@@ -208,12 +213,54 @@ export function SkelRows({ n = 6, h = 44 }) {
 }
 
 export function Empty({ icon = 'info', title, children, action }) {
+  const { settings, game } = useApp();
+  const [npcOk, setNpcOk] = useState(true);
+  // In het in-game thema praat een NPC (Hans) je toe in plaats van een kaal icoon
+  if (themeOf(settings) === 'ingame' && npcOk) {
+    return (
+      <div className="empty npc">
+        <img className="npc-head" src={wikiFile(game, npcFile())} alt="" referrerPolicy="no-referrer" onError={() => setNpcOk(false)} />
+        <div className="npc-say">
+          {title && <div className="npc-title">{title}</div>}
+          {children && <div className="small">{children}</div>}
+          {action && <div style={{ marginTop: 10 }}>{action}</div>}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="empty">
       <div className="ico"><Icon name={icon} size={22} /></div>
       {title && <div style={{ color: 'var(--tx)', fontWeight: 600, fontSize: 15 }}>{title}</div>}
       {children && <div className="small" style={{ maxWidth: 420 }}>{children}</div>}
       {action}
+    </div>
+  );
+}
+
+// Bedrag met muntenstapel zoals in de game. tone: geel / wit (100K+) / groen (10M+), alleen zichtbaar in het in-game thema.
+export function Gp({ value, sign, size = 18, digits, plain }) {
+  const { game } = useApp();
+  if (value == null || !Number.isFinite(Number(value))) return <span className="gp">–</span>;
+  const v = Number(value);
+  const txt = (sign && v > 0 ? '+' : '') + (plain ? Math.round(v).toLocaleString('nl-NL') : shortGp(v, digits));
+  return (
+    <span className={`gp gp-${gpTone(v)}`}>
+      <img src={wikiFile(game, coinsFile(v))} alt="" referrerPolicy="no-referrer" style={{ height: size, width: 'auto' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+      <span className="gp-n">{txt}</span>
+    </span>
+  );
+}
+
+// Ronde orb zoals bij Hitpoints/Prayer in de game
+export function Orb({ src, value, label, kind = 'hp', title }) {
+  return (
+    <div className={`orb-stat ${kind}`} title={title || label}>
+      <span className="orb-ball"><img src={src} alt="" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} /></span>
+      <span className="col" style={{ gap: 0 }}>
+        <span className="orb-val">{value ?? '–'}</span>
+        <span className="orb-lbl">{label}</span>
+      </span>
     </div>
   );
 }

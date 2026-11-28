@@ -175,7 +175,7 @@ export default function Quests() {
                   </div>
                   <div className="body row between" style={{ gap: 10 }}>
                     <a href={href('quests', r.t)} className="col" style={{ gap: 2, minWidth: 0, color: 'var(--tx)' }}>
-                      <span className="t trunc" style={{ fontWeight: 600, transition: 'color .2s' }}>{r.t.replace('/', ' · ')}</span>
+                      <span className={`t trunc q-${r.s === 'done' ? 'done' : r.s === 'started' ? 'started' : 'none'}`} style={{ fontWeight: 600, transition: 'color .2s' }}>{r.t.replace('/', ' · ')}</span>
                       {r.meta && <span className="small muted">{[r.meta.difficulty, r.meta.length, r.meta.qp ? `${r.meta.qp} QP` : null].filter(Boolean).join(' · ')}</span>}
                     </a>
                     <div className="row" style={{ gap: 8 }}>
@@ -201,7 +201,7 @@ export default function Quests() {
                   {filtered.map((x) => (
                     <tr key={x.title} onClick={() => { window.location.hash = href('quests', x.title); }} style={{ cursor: 'pointer' }}>
                       <td><StatusBtn t={x.title} /></td>
-                      <td><a href={href('quests', x.title)} style={{ color: 'var(--tx)', fontWeight: 600 }}>{x.name}</a>{x.series && <div className="small dim">{x.series}</div>}</td>
+                      <td><a href={href('quests', x.title)} className={`q-${st(x.title) === 'done' ? 'done' : st(x.title) === 'started' ? 'started' : 'none'}`} style={{ color: 'var(--tx)', fontWeight: 600 }}>{x.name}</a>{x.series && <div className="small dim">{x.series}</div>}</td>
                       <td><span style={{ color: diffColor(x.difficulty), fontWeight: 600, fontSize: 13 }}>{x.difficulty || '–'}</span></td>
                       <td className="muted small">{x.length || '–'}</td>
                       <td className="r">{x.qp ?? '–'}</td>

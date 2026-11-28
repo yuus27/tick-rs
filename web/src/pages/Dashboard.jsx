@@ -3,7 +3,9 @@ import { useApp } from '../lib/store.jsx';
 import { useAsync } from '../lib/api.js';
 import { recentUpdates } from '../lib/wiki.js';
 import { useMarket, buildItems } from '../lib/market.js';
-import { Icon, CountUp, Ring, Bar, SkillIcon, ItemIcon, Skel, Empty, delay } from '../components/ui.jsx';
+import { Icon, CountUp, Ring, Bar, SkillIcon, ItemIcon, Skel, Empty, Gp, Orb, delay } from '../components/ui.jsx';
+import { wikiFile, skillCapeFile, questIconFile } from '../lib/theme.js';
+import { questList, playerQuestPoints } from '../lib/wiki.js';
 import { href, wikiHref } from '../lib/router.js';
 import { nl, short, ago, greeting } from '../lib/format.js';
 import { osrsCombat, rs3Combat, xpFor } from '../lib/xp.js';
@@ -52,6 +54,9 @@ export default function Dashboard() {
   const views = useMemo(() => Object.fromEntries(skills.map((s) => [s.name, skillView(game, s, virtual)])), [skills, game, virtual]);
   const closest = [...skills].filter((s) => !views[s.name].maxed && s.xp != null).sort((a, b) => views[b.name].prog - views[a.name].prog).slice(0, 3);
   const recent = (history || []).filter((h) => h.game === game).slice(0, 5);
+  const qList = useAsync(() => (p ? questList(game) : Promise.resolve(null)), [game, !!p]);
+  const qp = p ? playerQuestPoints(player, qList.data, questMap) : null;
+  const hpName = game === 'rs3' ? 'Constitution' : 'Hitpoints';
 
   const kpis = [
     ['Total level', p?.total?.level, (v) => nl(v), p?.total?.rank ? `rank ${nl(p.total.rank)}` : cfg.short],
@@ -68,6 +73,14 @@ export default function Dashboard() {
           <h1 className="title">{greeting()}{rsn ? `, ${rsn}` : ''}</h1>
           <p className="sub">{new Date().toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })} · je account in één oogopslag</p>
         </div>
+        {p && (
+          <div className="orbs rise" style={{ animationDelay: '.05s' }}>
+            <Orb kind="hp" src={cfg.skillIcon(hpName)} value={levels[hpName]} label={hpName} />
+            <Orb kind="pray" src={cfg.skillIcon('Prayer')} value={levels.Prayer} label="Prayer" />
+            <Orb kind="cmb" src={cfg.skillIcon('Combat')} value={combat} label="Combat" />
+            {qp != null && qList.data && <Orb kind="qp" src={wikiFile(game, questIconFile(game))} value={qp} label="Quest points" />}
+          </div>
+        )}
         <div className="row wrap">
           <a className="btn" href={href('radar')}><Icon name="route" size={16} /> Unlock-radar</a>
           <a className="btn primary" href={href('play')}><Icon name="spark" size={16} /> Wat zal ik nu doen?</a>
@@ -123,7 +136,7 @@ export default function Dashboard() {
                   <span className="small muted">marge na tax <span className="mono" style={{ color: 'var(--tx)' }}>{short(f.margin)}</span> · limit {f.limit ? nl(f.limit) : '?'}</span>
                 </div>
                 <div className="col" style={{ alignItems: 'flex-end', gap: 1 }}>
-                  <span className="mono up" style={{ fontWeight: 600 }}>+{short(f.profit)}</span>
+                  <span className="mono up" style={{ fontWeight: 600 }}><Gp value={f.profit} sign size={15} /></span>
                   <span className="small dim">per 4 uur</span>
                 </div>
               </a>
@@ -174,10 +187,13 @@ export default function Dashboard() {
           </div>
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(172px, 1fr))', gap: 10 }}>
             {skills.map((s, i) => (
-              <a key={s.name} href={href('skills', s.name)} className="skill-tile rise" style={delay(i, 0.4, 0.02)} title={s.xp != null ? (views[s.name].toNext != null ? `${s.name}: ${nl(views[s.name].toNext)} XP tot ${views[s.name].shown + 1 > views[s.name].cap ? 'virtueel ' : ''}level ${views[s.name].shown + 1}` : `${s.name}: ${nl(s.xp)} / 200.000.000 XP`) : s.name}>
+              <a key={s.name} href={href('skills', s.name)} className={`skill-tile rise ${views[s.name].realMaxed ? 'maxed' : ''}`} style={delay(i, 0.4, 0.02)} title={s.xp != null ? (views[s.name].toNext != null ? `${s.name}: ${nl(views[s.name].toNext)} XP tot ${views[s.name].shown + 1 > views[s.name].cap ? 'virtueel ' : ''}level ${views[s.name].shown + 1}` : `${s.name}: ${nl(s.xp)} / 200.000.000 XP`) : s.name}>
                 <div className="row between" style={{ gap: 8 }}>
                   <span className="row" style={{ gap: 8, fontSize: 13, color: 'var(--tx2)', minWidth: 0 }}><SkillIcon skill={s.name} size={18} /><span className="trunc">{s.name}</span></span>
-                  <span className="num" style={{ flex: 'none', fontSize: views[s.name].shown >= 100 ? 17 : 19, color: views[s.name].realMaxed ? 'var(--acc)' : undefined }}>{views[s.name].shown}</span>
+                  <span className="row" style={{ gap: 6, flex: 'none' }}>
+                    {views[s.name].realMaxed && <img className="skill-cape" src={wikiFile(game, skillCapeFile(game, s.name))} alt="" referrerPolicy="no-referrer" style={{ height: 20 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
+                    <span className="num" style={{ fontSize: views[s.name].shown >= 100 ? 17 : 19, color: views[s.name].realMaxed ? 'var(--acc)' : undefined }}>{views[s.name].shown}</span>
+                  </span>
                 </div>
                 <Bar value={views[s.name].prog} color={SKILL_COLORS[s.name]} />
               </a>

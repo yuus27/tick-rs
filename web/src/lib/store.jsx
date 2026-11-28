@@ -60,10 +60,12 @@ export function AppProvider({ children }) {
     });
   }, []);
 
+  // toast(msg, kind) of toast(msg, { kind: 'milestone', img, eyebrow, sub, ms })
   const toast = useCallback((msg, kind = 'info') => {
     const id = Math.random().toString(36).slice(2);
-    setToasts((t) => [...t, { id, msg, kind }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4200);
+    const opts = typeof kind === 'object' ? kind : { kind };
+    setToasts((t) => [...t, { id, msg, ...opts, kind: opts.kind || 'info' }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), opts.ms || (opts.kind === 'milestone' ? 7000 : 4200));
   }, []);
 
   const game = data.settings.game in GAMES ? data.settings.game : 'osrs';

@@ -25,6 +25,9 @@ import Diaries from './pages/Diaries.jsx';
 import MapView from './pages/MapView.jsx';
 import Pathway from './pages/Pathway.jsx';
 import FirstRun from './components/FirstRun.jsx';
+import { themeOf, INGAME_ACCENT } from './lib/theme.js';
+import LevelWatcher from './components/LevelWatcher.jsx';
+import { MusicEngine } from './components/Music.jsx';
 import Watcher from './components/Watcher.jsx';
 
 class Boundary extends Component {
@@ -59,16 +62,21 @@ function View({ route }) {
 }
 
 export default function App() {
-  const { ready, cfg, game, toasts } = useApp();
+  const { ready, cfg, game, toasts, settings } = useApp();
   const route = useRoute();
+  const theme = themeOf(settings);
 
   useEffect(() => {
-    const r = document.documentElement.style;
-    r.setProperty('--acc', cfg.accent);
-    r.setProperty('--acc-soft', cfg.accentSoft);
-    r.setProperty('--acc-ink', cfg.accentInk);
+    const root = document.documentElement;
+    const r = root.style;
+    const a = theme === 'ingame' ? INGAME_ACCENT[game] || INGAME_ACCENT.osrs : { accent: cfg.accent, soft: cfg.accentSoft, ink: cfg.accentInk };
+    r.setProperty('--acc', a.accent);
+    r.setProperty('--acc-soft', a.soft);
+    r.setProperty('--acc-ink', a.ink);
+    root.dataset.theme = theme;
+    root.dataset.game = game;
     document.title = `tick. · ${cfg.short}`;
-  }, [cfg]);
+  }, [cfg, game, theme]);
 
   useEffect(() => { window.scrollTo({ top: 0 }); }, [route.path]);
 
@@ -87,6 +95,8 @@ export default function App() {
   return (
     <>
       <Watcher />
+      <LevelWatcher />
+      <MusicEngine section={route.parts[0] || ''} />
       <div className="ambient" aria-hidden="true"><div className="orb a" /><div className="orb b" /><div className="grain" /></div>
       <div className="shell">
         <Sidebar section={section} />
@@ -101,7 +111,13 @@ export default function App() {
       </div>
       <FirstRun />
       <div className="toasts" aria-live="polite">
-        {toasts.map((t) => (
+        {toasts.map((t) => t.kind === 'milestone' ? (
+          <div key={t.id} className="toast milestone" role="status">
+            <span className="ms-glow" aria-hidden="true">{t.img && <img src={t.img} alt="" referrerPolicy="no-referrer" />}</span>
+            <span className="col" style={{ gap: 2 }}><span className="ms-eyebrow">{t.eyebrow || 'Level-up'}</span><span className="ms-title">{t.msg}</span>{t.sub && <span className="small muted">{t.sub}</span>}</span>
+            <i className="ms-spark" aria-hidden="true" />
+          </div>
+        ) : (
           <div key={t.id} className={`toast ${t.kind}`}>
             <Icon name={t.kind === 'ok' ? 'check' : t.kind === 'warn' ? 'bell' : 'info'} size={17} style={{ color: t.kind === 'ok' ? 'var(--up)' : t.kind === 'warn' ? 'var(--down)' : 'var(--acc)', marginTop: 2 }} />
             <span>{t.msg}</span>

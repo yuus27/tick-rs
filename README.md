@@ -116,6 +116,14 @@ Koppel je eigen AI-app aan tick. Een AI zoals **Claude Desktop** kan dan je tick
 - **Eén klik:** *Instellingen → AI-koppeling → Koppel aan Claude Desktop*. tick. vindt zelf waar Claude zijn instellingen bewaart (ook bij nieuwere versies) en maakt eerst een back-up. Andere AI-apps koppel je met de configuratie die tick. laat zien, via stdio of via een URL met sleutel.
 - **Veilig:** staat standaard uit, werkt alleen op je eigen pc (127.0.0.1), vereist een geheime sleutel en kan niets aanpassen. tick. hoeft niet open te staan: de AI-app start tick. zo nodig op de achtergrond.
 
+### 🎨 In-game thema en muziek <sub>vanaf 0.5.0</sub>
+tick. ziet eruit als een companion-app van de game zelf: **steen en goud** bij OSRS, **staal en goud** bij RS3.
+
+- **Echte game-plaatjes:** bedragen met de muntenstapel die meegroeit, net als in je inventory, in de bekende kleuren (geel, wit vanaf 100K, groen vanaf 10M). Verder skillcapes bij gemaxte skills, orbs voor Hitpoints en Prayer, de questlijst in rood, geel en groen, je laatste flips als GE-slots en Hans die je toespreekt op lege schermen.
+- **Mijlpalen:** tick. ziet zelf wanneer je een level haalt en viert het, met de skillcape bij een 99/120.
+- **RuneScape-muziek:** zet de muziek aan met de knop in de bovenbalk. Nummers als Harmony, Autumn Voyage en Sea Shanty 2 worden van de wiki gestreamd; de GE-terminal, Quests en de Wiki hebben hun eigen nummer. Standaard uit, met volume en *volgende*.
+- Liever rustig? *Instellingen → Thema → Strak* geeft het oude, minimale uiterlijk terug.
+
 ### En verder
 - **Dashboard** met je stats, beste flips, doelen en de laatste game-updates.
 - **Doelen** voor skills en quests, opgeknipt in stappen, met een streak.
@@ -200,4 +208,4 @@ docs/               screenshot-script
 
 ---
 
-<sub>tick. is een fanproject en is niet gelieerd aan, gesponsord door of goedgekeurd door Jagex Ltd. RuneScape en Old School RuneScape zijn handelsmerken van Jagex Ltd. Wiki-inhoud is afkomstig van de [RuneScape Wiki](https://runescape.wiki) en de [Old School RuneScape Wiki](https://oldschool.runescape.wiki) (CC BY-NC-SA 3.0). Prijsdata via de [Real-time Prices API](https://prices.runescape.wiki). Kaarttegels van de wikikaart (Weird Gloop).</sub>
+<sub>tick. is een fanproject en is niet gelieerd aan, gesponsord door of goedgekeurd door Jagex Ltd. RuneScape en Old School RuneScape zijn handelsmerken van Jagex Ltd. Wiki-inhoud is afkomstig van de [RuneScape Wiki](https://runescape.wiki) en de [Old School RuneScape Wiki](https://oldschool.runescape.wiki) (CC BY-NC-SA 3.0). Prijsdata via de [Real-time Prices API](https://prices.runescape.wiki). Kaarttegels van de wikikaart (Weird Gloop). Plaatjes en muziek worden rechtstreeks van de wiki geladen en niet meegeleverd. RuneScape-lettertypen door WolfieMario en Bucket (CC BY-NC-SA / CC BY-SA, zie `web/src/assets/fonts/LICENSE.md`).</sub>

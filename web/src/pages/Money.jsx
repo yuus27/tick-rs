@@ -3,7 +3,8 @@ import { useApp } from '../lib/store.jsx';
 import { useAsync } from '../lib/api.js';
 import { loadMethods } from '../lib/intel.js';
 import { useJudgedMethods, lvOf, meets } from '../lib/mmg.js';
-import { Icon, PageHead, SkelRows, ErrorBox, Empty, Bar, SkillIcon, delay } from '../components/ui.jsx';
+import { Icon, PageHead, SkelRows, ErrorBox, Empty, Bar, SkillIcon, Gp, delay } from '../components/ui.jsx';
+import { wikiFile } from '../lib/theme.js';
 import { wikiHref, href } from '../lib/router.js';
 import { short } from '../lib/format.js';
 
@@ -66,14 +67,14 @@ export default function Money() {
       {best && hasLv && (
         <a href={best.title ? wikiHref(best.title) : '#'} className="card accent glow rise row wrap between" style={{ color: 'var(--tx)', padding: 26, gap: 20 }}>
           <div className="row" style={{ gap: 18 }}>
-            <span style={{ width: 60, height: 60, borderRadius: '50%', background: 'var(--acc)', color: 'var(--acc-ink)', display: 'grid', placeItems: 'center', fontFamily: 'var(--f-head)', fontWeight: 700, fontSize: 20, animation: 'coin 3.2s ease-in-out infinite' }}>gp</span>
+            <span style={{ width: 64, height: 64, borderRadius: '50%', background: 'radial-gradient(circle, var(--acc-soft), transparent 70%)', display: 'grid', placeItems: 'center', animation: 'coin 3.2s ease-in-out infinite' }}><img src={wikiFile(game, 'Coins_10000.png')} alt="" referrerPolicy="no-referrer" style={{ height: 44, imageRendering: 'pixelated' }} /></span>
             <div className="col" style={{ gap: 4 }}>
               <span className="eyebrow acc">Beste voor jou nu{best.status === 'stretch' ? ' · iets onder aanbevolen' : ''}</span>
               <span className="num" style={{ fontSize: 26 }}>{best.name}</span>
               <span className="small muted">{best.category}{best.intensity ? ` · ${best.intensity}` : ''}{best.status === 'stretch' ? ` · aanbevolen: ${best.missRec.map((s) => `${s.skill} ${s.level}`).join(', ')}${best.missRecQuests?.length ? ` · quest: ${best.missRecQuests.join(', ')}` : ''}` : ' · voldoet aan vereist én aanbevolen'}</span>
             </div>
           </div>
-          <span className="num acc" style={{ fontSize: 40 }}>{short(best.profit)}<span className="muted" style={{ fontSize: 15 }}> /u</span></span>
+          <span className="num acc" style={{ fontSize: 40 }}><Gp value={best.profit} size={30} /><span className="muted" style={{ fontSize: 15 }}> /u</span></span>
         </a>
       )}
 
@@ -99,7 +100,7 @@ export default function Money() {
                 {hasLv && <span className={`tag ${st.cls}`}>{m.status === 'locked' && <Icon name="lock" size={11} stroke={2.4} />} {st.label}</span>}
               </div>
               <div className="row" style={{ alignItems: 'baseline', gap: 8 }}>
-                <span className="num" style={{ fontSize: 30, color: m.profit < 0 ? 'var(--down)' : undefined }}>{short(m.profit)}</span>
+                <span className="num" style={{ fontSize: 30, color: m.profit < 0 ? 'var(--down)' : undefined }}><Gp value={m.profit} size={24} /></span>
                 <span className="small muted">per uur</span>
                 {m.intensity && <span className="tag" style={{ marginLeft: 'auto' }}>{m.intensity}</span>}
               </div>

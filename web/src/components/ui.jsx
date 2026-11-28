@@ -40,6 +40,8 @@ const P = {
   music: 'M9 18V5l12-2v13 M9 18a3 3 0 1 1-6 0a3 3 0 1 1 6 0 M21 16a3 3 0 1 1-6 0a3 3 0 1 1 6 0',
   mute: 'M11 5L6 9H2v6h4l5 4z M22 9l-6 6 M16 9l6 6',
   next: 'M5 4l10 8-10 8z M19 5v14',
+  sword: 'M14.5 17.5L3 6V3h3l11.5 11.5 M13 19l6-6 M16 16l4 4 M19 21l2-2',
+  shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
   prev: 'M19 20L9 12l10-8z M5 19V5',
 };
 export function Icon({ name, size = 18, stroke = 1.9, fill = 'none', className, style }) {

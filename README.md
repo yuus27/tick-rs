@@ -124,6 +124,26 @@ tick. ziet eruit als een companion-app van de game zelf: **steen en goud** bij O
 - **RuneScape-muziek:** zet de muziek aan met de knop in de bovenbalk. Nummers als Harmony, Autumn Voyage en Sea Shanty 2 worden van de wiki gestreamd; de GE-terminal, Quests en de Wiki hebben hun eigen nummer. Standaard uit, met volume en *volgende*.
 - Liever rustig? *Instellingen → Thema → Strak* geeft het oude, minimale uiterlijk terug.
 
+### ⚔️ PvM-tracker <sub>vanaf 0.6.0</sub>
+<img src="docs/screenshots/pvm.jpg" alt="PvM-tracker met kill counts per boss" width="100%">
+
+- **Je kill counts** per boss uit de hiscores, met hoeveel kills je er deze week en maand bij hebt gedaan.
+- **Per boss:** GP per kill (droptabel van de wiki × live GE-prijzen), kills per uur uit je sessies en hoe dry je bent: per zeldzame drop zie je hoe vaak je hem bij jouw KC gemiddeld al had moeten krijgen en hoe groot die kans was. Met de collection log uit WikiSync ziet tick. ook wat je al hebt.
+- **RS3:** de hiscores tellen geen bosses, dus tick. laat je drops en kills uit je adventurer's log (RuneMetrics) zien.
+
+### 🛡️ Gear-advisor <sub>vanaf 0.6.0</sub>
+<img src="docs/screenshots/gear-advisor.jpg" alt="Gear-advisor: de beste upgrade per GP" width="100%">
+
+- **OSRS:** kies een boss, vul je uitrusting in en tick. rekent met de DPS-formules van de wiki uit welke upgrade de meeste DPS per GP oplevert. Met budgetfilter, de tier van de wiki-strategiepagina erbij en een check of je het item al kunt dragen. Rekent met potions, prayers, salve, slayer helm, void, twisted bow en meer; special attacks en de meeste set-effecten niet.
+- **RS3:** per slot de beste tier binnen je levels (goedkoopste op de GE) en wat de volgende stap kost, plus of dual-wield of tweehandig beter is.
+
+### 📱 tick. op je telefoon <sub>vanaf 0.6.0</sub>
+<img src="docs/screenshots/telefoon.jpg" alt="tick. op een telefoon" width="300" align="right">
+
+Zet *Instellingen → Op je telefoon* aan en scan de QR-code met je telefoon (die moet op hetzelfde wifi-netwerk zitten). tick. opent dan in de browser van je telefoon, met een eigen telefoonweergave. Handig als je pc de game draait en je even iets wilt opzoeken.
+- **Veilig:** staat standaard uit, alleen bereikbaar in je eigen netwerk en alleen met de koppelcode uit de QR-code. Met *Nieuwe koppelcode* gooi je gekoppelde telefoons eruit. De AI-koppeling en het koppelscherm zelf zijn vanaf de telefoon niet bereikbaar.
+- Vraagt Windows om toegang? Sta tick. toe op **privénetwerken**.
+
 ### En verder
 - **Dashboard** met je stats, beste flips, doelen en de laatste game-updates.
 - **Doelen** voor skills en quests, opgeknipt in stappen, met een streak.
@@ -167,7 +187,7 @@ De data komt inderdaad van de wiki en de game. Wat tick. toevoegt, is de **combi
 tick. leest alleen openbare data en verandert niets aan je game of client. Het is geen plugin en geen bot.
 
 **Wat gebeurt er met mijn data?**
-Alles blijft op je eigen pc (`%APPDATA%\tick\data`). Er is geen account, geen server van ons en geen tracking. tick. draait een kleine lokale server op `127.0.0.1` die alleen praat met een vaste lijst bronnen: de wiki's, de wiki-prijzen-API, de officiële hiscores en WikiSync. De kaarttegels komen rechtstreeks van de wikikaart (maps.runescape.wiki).
+Alles blijft op je eigen pc (`%APPDATA%\tick\data`). Er is geen account, geen server van ons en geen tracking. tick. draait een kleine lokale server op `127.0.0.1` die alleen praat met een vaste lijst bronnen: de wiki's, de wiki-prijzen-API, de officiële hiscores, WikiSync en de open DPS-data van de wiki (osrs-dps-calc op GitHub). Alleen als je *Op je telefoon* aanzet, is tick. ook bereikbaar in je eigen netwerk, en dan alleen met de koppelcode. De kaarttegels komen rechtstreeks van de wikikaart (maps.runescape.wiki).
 
 **Werkt het op Mac of Linux?**
 De kant-en-klare app is er (nog) alleen voor Windows. Vanaf de broncode draait tick. overal waar Node.js draait (zie hieronder).
@@ -191,10 +211,13 @@ Verhoog `version` in `package.json` en push naar `main`. De workflow **Release**
 ### Structuur
 ```
 server/index.js     lokale server: allowlist-proxy, cache, opslag
+server/lan.js       telefoon-ingang: LAN-poort met koppelcode en QR
+server/gear.js      DPS-data, aanbevolen uitrusting en itemvereisten van de wiki
 electron/           desktop-app: venster, tray, auto-update
 web/src/lib         games.js (OSRS/RS3-verschillen), wiki.js (parsen), intel.js + advisor.js (adviseur),
                     mmg.js (money-making), market.js (GE), xp.js, map.js (kaart),
-                    diaries.js (achievement diaries), session.js (sessierapport), pathway.js (stappenplan)
+                    diaries.js (achievement diaries), session.js (sessierapport), pathway.js (stappenplan),
+                    dps.js (DPS-berekening), pricebook.js (prijzen op naam), xptrack.js (XP- en KC-geschiedenis)
   server/mcp.js     AI-koppeling (MCP): gereedschap voor AI-apps, alleen lezen
   server/ai/        rekenfuncties van de app, gebundeld voor Node (happy-dom)
   electron/mcp-bridge.cjs  brug tussen een AI-app (stdio) en tick.

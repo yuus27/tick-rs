@@ -23,6 +23,7 @@ const DEFAULTS = {
   portfolio: { osrs: [], rs3: [] },
   pathway: {},
   xphist: {},
+  gear: {},
   paper: { osrs: { cash: 10000000, positions: [], trades: [] }, rs3: { cash: 100000000, positions: [], trades: [] } },
 };
 

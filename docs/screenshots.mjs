@@ -23,6 +23,9 @@ const SHOTS = [
   { game: 'osrs', path: '#/map', file: 'kaart', h: 1000, slow: true },
   { game: 'osrs', path: '#/diaries', file: 'diaries', h: 1200, slow: true },
   { game: 'osrs', path: '#/sessions', file: 'sessies', h: 1000 },
+  { game: 'osrs', path: '#/pvm', file: 'pvm', h: 1000 },
+  { game: 'osrs', path: '#/gear', file: 'gear-advisor', h: 1300, slow: true },
+  { game: 'osrs', path: '#/', file: 'telefoon', h: 844, w: 390 },
   { game: 'rs3', path: '#/', file: 'dashboard-rs3', h: 900 },
 ];
 
@@ -60,6 +63,15 @@ await put('sessions', { active: null, history: [
   sess(4, 75, [{ skill: 'Fishing', xp: 31500, from: 68, to: 69 }, { skill: 'Cooking', xp: 18900, from: 72, to: 72 }], [], 2, 260000),
 ] });
 
+// Voorbeelduitrusting voor de gear-advisor: midgame ranged tegen Generaal Graardor
+try {
+  const eq = await (await fetch(`${BASE}/api/osrs/dps/equipment`, { headers: { 'X-Tick': '1' } })).json();
+  const id = (n) => eq.find((x) => x.n === n)?.id;
+  const ranged = { weapon: id('Magic shortbow'), ammo: id('Rune arrow'), head: id('Archer helm'), body: id("Black d'hide body"), legs: id("Black d'hide chaps"), neck: id('Amulet of glory'), cape: id("Ava's accumulator"), hands: id('Barrows gloves'), feet: id('Snakeskin boots'), ring: id('Archers ring') };
+  for (const k of Object.keys(ranged)) if (ranged[k] == null) delete ranged[k];
+  await put('gear', { osrs: { style: 'ranged', target: { n: 'General Graardor', v: '' }, boosts: { pot: true, pray: true }, setups: { ranged } } });
+} catch { /* gear-advisor toont dan de lege staat */ }
+
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
 await fs.mkdir(OUT, { recursive: true });
 let lastGame = null;
@@ -68,7 +80,7 @@ for (const s of SHOTS) {
     await put('settings', { game: s.game, osrsName: RSN, rs3Name: RSN, notify: false, acct: { osrs: { members: true, iron: false }, rs3: { members: true, iron: false } } });
     lastGame = s.game;
   }
-  const page = await browser.newPage({ viewport: { width: 1440, height: s.h }, deviceScaleFactor: 2 });
+  const page = await browser.newPage({ viewport: { width: s.w || 1440, height: s.h }, deviceScaleFactor: s.w ? 3 : 2, ...(s.w ? { isMobile: true, hasTouch: true } : {}) });
   await page.addInitScript((src) => {
     const re = new RegExp(src, 'gi');
     const mask = () => {

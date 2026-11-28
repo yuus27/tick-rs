@@ -174,3 +174,6 @@ html[data-theme='ingame'] .card.skill-maxed { border-color: color-mix(in srgb, v
 .ge-slot-bar { height: 10px; border-radius: 3px; background: #0b0805; border: 1px solid #000; overflow: hidden; }
 .ge-slot-bar > i { display: block; height: 100%; background: linear-gradient(180deg, #2fd35a, #138a32); box-shadow: inset 0 1px 0 rgba(255,255,255,.35); }
 html[data-theme='ingame'] .ge-slot { background: var(--well); box-shadow: inset 0 2px 4px rgba(0,0,0,.45); }
+
+.lan-qr { width: 190px; height: 190px; padding: 10px; border-radius: 14px; background: #fff; flex: none; box-shadow: 0 10px 30px -12px rgba(0,0,0,.7); }
+.lan-qr svg { width: 100%; height: 100%; display: block; }

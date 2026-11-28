@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../lib/store.jsx';
+import { href } from '../lib/router.js';
 import { snapshot, diff } from '../lib/session.js';
 import { Icon, PageHead, SkillIcon, CountUp, Empty, Gp, delay } from '../components/ui.jsx';
 import { nl, short } from '../lib/format.js';
@@ -48,6 +49,18 @@ function Gains({ d, ms }) {
         <Stat label="Quests" value={d.quests.length} sub={d.quests.slice(0, 2).join(', ') || null} />
         <Stat label="GE-winst" value={d.flips ? <Gp value={d.gp} sign size={22} /> : '–'} sub={d.flips ? `${d.flips} flip${d.flips === 1 ? '' : 's'} uit je journaal` : 'geen flips gelogd'} cls={d.gp > 0 ? 'up' : d.gp < 0 ? 'down' : ''} />
       </div>
+      {d.kills?.length > 0 && (
+        <div className="card col" style={{ gap: 8 }}>
+          <h3 className="h">Kills</h3>
+          {d.kills.map((k, i) => (
+            <a key={k.name} href={href('pvm', k.name)} className="row rise list-row" style={{ gap: 10, ...delay(i, 0, 0.03) }}>
+              <span className="grow" style={{ fontWeight: 600 }}>{k.name}</span>
+              <span className="mono">+{nl(k.n)}</span>
+              {ms > 10 * 60e3 && <span className="small dim" style={{ width: 90, textAlign: 'right' }}>{(k.n / (ms / 3600e3)).toFixed(1)}/u</span>}
+            </a>
+          ))}
+        </div>
+      )}
       {d.skills.length > 0 && (
         <div className="card col" style={{ gap: 8 }}>
           <h3 className="h">Per skill</h3>

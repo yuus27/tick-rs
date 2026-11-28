@@ -7,7 +7,7 @@ import { MusicButton } from './Music.jsx';
 import { href, navigate, wikiHref } from '../lib/router.js';
 
 const PAGES = [
-  ['Dashboard', ''], ['Nu spelen', 'play'], ['Stappenplan', 'path'], ['Kaart', 'map'], ['Diaries', 'diaries'], ['Sessies', 'sessions'], ['Unlock-radar', 'radar'], ['GE-terminal', 'ge'], ['Markt-radar', 'market'], ['Quests', 'quests'], ['Skill guides', 'skills'], ['Wiki', 'wiki'], ['Money-making', 'money'], ['Doelen', 'goals'], ['Calculators', 'tools'], ['Instellingen', 'settings'], ['Diagnose', 'diag'],
+  ['Dashboard', ''], ['Nu spelen', 'play'], ['Stappenplan', 'path'], ['Kaart', 'map'], ['Diaries', 'diaries'], ['Sessies', 'sessions'], ['Unlock-radar', 'radar'], ['GE-terminal', 'ge'], ['Markt-radar', 'market'], ['Quests', 'quests'], ['Skill guides', 'skills'], ['Wiki', 'wiki'], ['Money-making', 'money'], ['PvM-tracker', 'pvm'], ['Gear-advisor', 'gear'], ['Doelen', 'goals'], ['Calculators', 'tools'], ['Instellingen', 'settings'], ['Diagnose', 'diag'],
 ];
 
 export default function Topbar() {
@@ -128,7 +128,7 @@ function SessionPill() {
   const [, force] = useState(0);
   useEffect(() => { if (!active) return; const t = setInterval(() => force((x) => x + 1), 30000); return () => clearInterval(t); }, [active]);
   if (!rsn) return null;
-  if (!active) return <button className="btn sm ghost" onClick={start} title="Start een sessie: tick. meet je XP, levels, quests en GE-winst"><Icon name="clock" size={14} /> Start sessie</button>;
+  if (!active) return <button className="btn sm ghost" onClick={start} aria-label="Start sessie" title="Start een sessie: tick. meet je XP, levels, quests en GE-winst"><Icon name="clock" size={14} /> <span className="hide-sm">Start sessie</span></button>;
   const m = Math.round((Date.now() - active.startedAt) / 60000);
   return <a className="btn sm" href="#/sessions" title="Bekijk je lopende sessie"><span className="dot live" /> Sessie {m >= 60 ? `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}` : `${m} min`}</a>;
 }

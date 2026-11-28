@@ -17,6 +17,8 @@ const NAV = [
   { key: 'wiki', label: 'Wiki', icon: 'book' },
   { key: 'map', label: 'Kaart', icon: 'map' },
   { key: 'money', label: 'Money-making', icon: 'coins' },
+  { key: 'pvm', label: 'PvM', icon: 'sword' },
+  { key: 'gear', label: 'Gear-advisor', icon: 'shield' },
   { key: 'diaries', label: 'Diaries', icon: 'star' },
   { key: 'goals', label: 'Doelen', icon: 'target' },
   { key: 'sessions', label: 'Sessies', icon: 'clock' },
@@ -30,15 +32,24 @@ export default function Sidebar({ section }) {
     const t = setInterval(() => setTick(Math.floor(Date.now() / 600)), 600);
     return () => clearInterval(t);
   }, []);
+  // Op de telefoon klapt het menu in; na het kiezen van een pagina gaat het weer dicht
+  const [menu, setMenu] = useState(false);
+  useEffect(() => { setMenu(false); }, [section]);
   const p = player.data;
   const combat = !p ? null : game === 'osrs' ? osrsCombat(levels) : (p.combat || rs3Combat(levels));
 
   return (
-    <aside className="side">
-      <a className="brand" href={href()} aria-label="tick. home">
-        <span className="brand-mark"><i /></span>
-        <span className="brand-name">tick<b>.</b></span>
-      </a>
+    <aside className={`side ${menu ? 'open' : ''}`}>
+      <div className="side-head">
+        <a className="brand" href={href()} aria-label="tick. home">
+          <span className="brand-mark"><i /></span>
+          <span className="brand-name">tick<b>.</b></span>
+        </a>
+        <span className="side-now">{NAV.find((n) => n.key === section)?.label || ''}</span>
+        <button type="button" className="btn sm icon side-menu" aria-expanded={menu} aria-label={menu ? 'Menu sluiten' : 'Menu openen'} onClick={() => setMenu((m) => !m)}>
+          {menu ? <Icon name="x" size={18} /> : <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 7h16 M4 12h16 M4 17h16" /></svg>}
+        </button>
+      </div>
 
       <div className="switch" role="tablist" aria-label="Game">
         <span className={`knob ${game === 'rs3' ? 'r' : ''}`} />

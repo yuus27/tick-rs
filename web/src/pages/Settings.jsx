@@ -78,6 +78,53 @@ function UpdateCard() {
 const mcpApi = (url, body) => fetch(url, { method: body ? 'POST' : 'GET', headers: { 'X-Tick': '1', ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined })
   .then(async (r) => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || `Fout ${r.status}`); return j; });
 
+// tick. op je telefoon: koppelen via QR-code op je thuisnetwerk
+function LanCard() {
+  const { toast } = useApp();
+  const [info, setInfo] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const load = () => mcpApi('/api/lan/info').then(setInfo, () => setInfo(false));
+  useEffect(() => { load(); }, []);
+  if (info === false || info === null) return null;
+  const toggle = async (on) => {
+    setBusy(true);
+    try { const r = await mcpApi('/api/lan/config', { enabled: on }); if (r.error) toast(r.error, 'warn'); await load(); } catch (e) { toast(e.message, 'warn'); }
+    setBusy(false);
+  };
+  const reset = async () => { setBusy(true); try { await mcpApi('/api/lan/reset', {}); await load(); toast('Nieuwe koppelcode. Oude telefoons moeten opnieuw scannen.', 'ok'); } catch (e) { toast(e.message, 'warn'); } setBusy(false); };
+  return (
+    <section className="card col" style={{ gap: 12 }}>
+      <div className="row wrap between">
+        <div className="col" style={{ gap: 2 }}>
+          <h2 className="h">Op je telefoon</h2>
+          <span className="small muted">Open tick. op je telefoon via je eigen wifi. Geen account, geen cloud: je telefoon praat rechtstreeks met deze PC.</span>
+        </div>
+        <Toggle on={info.enabled} onChange={toggle} label="Telefoon-toegang" />
+      </div>
+      {info.enabled && (
+        <div className="row wrap" style={{ gap: 18, alignItems: 'flex-start' }}>
+          {info.qr ? <div className="lan-qr" dangerouslySetInnerHTML={{ __html: info.qr }} aria-label="QR-code om te koppelen" role="img" /> : null}
+          <div className="col grow" style={{ gap: 8, minWidth: 240 }}>
+            {info.error && <span className="small down">{info.error}</span>}
+            {info.urls?.length ? (
+              <>
+                <span>Scan de code met de camera van je telefoon. Je telefoon moet op hetzelfde wifi-netwerk zitten als deze PC.</span>
+                <span className="small dim">Of open deze link op je telefoon:</span>
+                <code className="mono small" style={{ wordBreak: 'break-all', padding: '8px 10px', borderRadius: 10, background: 'var(--bg2)', border: '1px solid var(--line)' }}>{info.urls[0]}</code>
+                <span className="small muted">Vraagt Windows om toegang tot het netwerk? Kies <b>Privénetwerken</b> en klik op Toestaan. Tip: zet tick. op je beginscherm via het deelmenu van je browser.</span>
+              </>
+            ) : !info.error && <span className="small muted">Geen thuisnetwerk gevonden. Zit deze PC op wifi of met een kabel aan je router?</span>}
+            <div className="row" style={{ gap: 8 }}>
+              <button className="btn sm ghost" onClick={reset} disabled={busy}><Icon name="refresh" size={14} /> Nieuwe koppelcode</button>
+            </div>
+            <span className="small dim">Een nieuwe koppelcode koppelt alle telefoons los. De AI-koppeling en deze instelling zijn vanaf je telefoon niet te wijzigen.</span>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function McpCard() {
   const { toast } = useApp();
   const [info, setInfo] = useState(null);
@@ -88,7 +135,7 @@ function McpCard() {
   const [file, setFile] = useState('');
   const load = () => mcpApi('/api/mcp/info').then(setInfo, (e) => setErr(e.message));
   useEffect(() => { load(); }, []);
-  if (err) return <section className="card"><span className="small down">AI-koppeling niet beschikbaar: {err}</span></section>;
+  if (err) return /telefoon/i.test(err) ? null : <section className="card"><span className="small down">AI-koppeling niet beschikbaar: {err}</span></section>;
   if (!info) return null;
   const set = async (body, msg) => {
     setBusy(true);
@@ -253,6 +300,7 @@ export default function Settings() {
         </div>
       </section>
       {window.tick?.desktop && <UpdateCard />}
+      <LanCard />
       <McpCard />
       <section className="card col" style={{ gap: 10 }}>
         <div className="row wrap between">

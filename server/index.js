@@ -11,6 +11,8 @@ import os from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import fss from 'node:fs';
 import { setupMcp } from './mcp.js';
+import { setupLan } from './lan.js';
+import { setupGear } from './gear.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -81,9 +83,12 @@ app.use(express.json({ limit: '2mb' }));
 // Alleen verzoeken van deze machine accepteren (extra laag naast de 127.0.0.1-binding)
 app.use('/api', (req, res, next) => {
   const host = (req.headers.host || '').split(':')[0];
-  if (!['127.0.0.1', 'localhost'].includes(host)) return res.status(403).json({ error: 'forbidden' });
+  // Uitzondering: gekoppelde telefoon via de LAN-ingang (die heeft de koppelcode al gecontroleerd)
+  if (!req.tickLan && !['127.0.0.1', 'localhost'].includes(host)) return res.status(403).json({ error: 'forbidden' });
   next();
 });
+
+const lan = setupLan(app, { dataDir: DATA_DIR });
 
 const wrap = (fn) => (req, res) => fn(req, res).catch((e) => {
   res.status(e.status && e.status >= 400 ? e.status : 500).json({ error: e.message || 'Onbekende fout' });
@@ -168,6 +173,42 @@ app.get('/api/:game/bucket/:name', wrap(async (req, res) => {
   }
   res.json({ rows, fields: def.fields });
 }));
+
+// ---------- PvM: droptabel per monster (wiki-bucket 'dropsline') ----------
+function rarityOf(txt) {
+  const t = String(txt || '').replace(/,/g, '').trim().toLowerCase();
+  if (t === 'always') return 1;
+  const m = t.match(/^~?\s*([\d.]+)\s*\/\s*([\d.]+)/);
+  if (m) return Number(m[1]) / Number(m[2]);
+  const pct = t.match(/^([\d.]+)\s*%/);
+  if (pct) return Number(pct[1]) / 100;
+  return null; // common / rare / varies: onbekend
+}
+app.get('/api/osrs/drops/:monster', wrap(async (req, res) => {
+  const name = String(req.params.monster || '').slice(0, 80);
+  if (!name || /['\\]/.test(name)) throw new UpstreamError(400, 'Ongeldige naam');
+  const query = `bucket('dropsline').select('item_name','drop_json','page_name').where('page_name','${name}').limit(500).run()`;
+  const data = await fetchCached(`${GAMES.osrs.wiki}?action=bucket&format=json&query=${encodeURIComponent(query)}`, 12 * 3600e3);
+  if (data?.error) throw new UpstreamError(502, 'Wiki-bucket: ' + String(data.error).slice(0, 120));
+  const drops = [];
+  for (const row of data?.bucket || []) {
+    let j = {};
+    try { j = JSON.parse(row.drop_json || '{}'); } catch { /* overslaan */ }
+    const rate = rarityOf(j.Rarity);
+    drops.push({
+      item: j['Dropped item'] || row.item_name,
+      rarity: j.Rarity || '',
+      rate,
+      qLow: Number(j['Quantity Low']) || 1,
+      qHigh: Number(j['Quantity High']) || Number(j['Quantity Low']) || 1,
+      rolls: Number(j.Rolls) || 1,
+      from: j['Dropped from'] || '',
+    });
+  }
+  res.json({ monster: name, drops });
+}));
+
+setupGear(app, { fetchCached, wrap, UpstreamError, dataDir: DATA_DIR, wikiApi: GAMES.osrs.wiki });
 
 // ---------- kaart: actuele tegelversie + lijst met kaarten ----------
 const MAPS = {
@@ -379,6 +420,8 @@ app.get('/api/:game/player/:name', wrap(async (req, res) => {
       out.syncedAt = v.timestamp || null;
       // Achievement diaries: { Regio: { Easy: { complete, tasks: [bool] }, ... } }
       if (v.achievement_diaries && typeof v.achievement_diaries === 'object') out.diaries = v.achievement_diaries;
+      // Collection log (item-ID's) als de speler dat in de WikiSync-plugin aan heeft staan
+      if (Array.isArray(v.collection_log) && v.collection_log.length) out.collectionLog = v.collection_log;
     }
   } else {
     const [hs, sync, rm, rq] = await Promise.all([
@@ -439,7 +482,7 @@ app.get('/api/:game/player/:name', wrap(async (req, res) => {
 }));
 
 // ---------- lokale opslag ----------
-const STORE_KEYS = new Set(['settings', 'watchlist', 'journal', 'goals', 'history', 'quests', 'sessions', 'portfolio', 'paper', 'pathway', 'xphist']);
+const STORE_KEYS = new Set(['settings', 'watchlist', 'journal', 'goals', 'history', 'quests', 'sessions', 'portfolio', 'paper', 'pathway', 'xphist', 'gear']);
 let writeChain = Promise.resolve();
 
 app.get('/api/store/:key', wrap(async (req, res) => {
@@ -522,7 +565,7 @@ export async function startServer({ port = PORT, tries = 10 } = {}) {
       srv.once('listening', () => resolve(srv));
       srv.once('error', (e) => (e.code === 'EADDRINUSE' ? resolve(null) : reject(e)));
     });
-    if (server) { await mcp.onListen(p); return { port: p, server }; }
+    if (server) { await mcp.onListen(p); await lan.boot(); return { port: p, server }; }
   }
   throw new Error(`Geen vrije poort gevonden vanaf ${port}`);
 }

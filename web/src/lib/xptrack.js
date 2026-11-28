@@ -16,26 +16,35 @@ export function xpMap(skills) {
 }
 
 // Geeft de bijgewerkte geschiedenis terug, of null als er niets te bewaren valt
-export function recordSnapshot(hist, game, rsn, skills, now = Date.now()) {
+export function kcMap(activities) {
+  const o = {};
+  for (const a of activities || []) if (a.name && Number(a.score) > 0) o[a.name] = Number(a.score);
+  return o;
+}
+
+export function recordSnapshot(hist, game, rsn, skills, activities = null, now = Date.now()) {
   if (!rsn || !skills?.length) return null;
   const xp = xpMap(skills);
   if (!Object.keys(xp).length) return null;
+  const kc = kcMap(activities);
+  const hasKc = Object.keys(kc).length > 0;
   const k = keyOf(game, rsn);
   const cur = hist?.[k] || { hourly: [], daily: [] };
   const hourly = [...(cur.hourly || [])];
   const daily = [...(cur.daily || [])];
   const lastH = hourly[hourly.length - 1];
-  const same = lastH && Object.keys(xp).every((n) => lastH.xp[n] === xp[n]);
+  const same = lastH && Object.keys(xp).every((n) => lastH.xp[n] === xp[n]) && Object.keys(kc).every((n) => lastH.kc?.[n] === kc[n]);
+  const snap = (t) => (hasKc ? { t, xp, kc } : { t, xp });
   if (lastH && now - lastH.t < 55 * 60e3) {
     if (same) return null;
-    hourly[hourly.length - 1] = { t: lastH.t, xp }; // binnen het uur: bijwerken
+    hourly[hourly.length - 1] = snap(lastH.t); // binnen het uur: bijwerken
   } else {
-    hourly.push({ t: now, xp });
+    hourly.push(snap(now));
   }
   const d = localDate(now);
   const lastD = daily[daily.length - 1];
-  if (lastD && lastD.d === d) daily[daily.length - 1] = { d, t: now, xp };
-  else daily.push({ d, t: now, xp });
+  if (lastD && lastD.d === d) daily[daily.length - 1] = { d, ...snap(now) };
+  else daily.push({ d, ...snap(now) });
   return {
     ...(hist || {}),
     [k]: { hourly: hourly.filter((h) => now - h.t <= 50 * HOUR).slice(-60), daily: daily.slice(-400) },
@@ -79,6 +88,31 @@ export function dailyRate(hist, game, rsn, skill, curXp, days = 7, now = Date.no
   const span = now - base.t;
   if (span < 20 * HOUR) return null;
   return { perDay: Math.max(0, curXp - base.xp[skill]) / (span / DAY), days: span / DAY };
+}
+
+// Kills per boss in de periode (uit de KC in je momentopnames)
+export function kcGains(hist, game, rsn, activities, ms, now = Date.now()) {
+  const all = snapshots(hist, game, rsn).filter((x) => x.kc);
+  const base = all.find((x) => x.t >= now - ms);
+  if (!base) return null;
+  const kc = kcMap(activities);
+  const per = {};
+  for (const [n, v] of Object.entries(kc)) per[n] = Math.max(0, v - (base.kc[n] ?? v));
+  return { per, since: base.t, span: now - base.t };
+}
+
+// Kills per uur uit je sessies waarin deze boss de meeste kills had
+export function sessionKph(sessions, game, boss) {
+  let n = 0;
+  let ms = 0;
+  for (const h of sessions?.history || []) {
+    if (h.game !== game || !h.kills?.length || h.kills[0].name !== boss) continue;
+    const dur = (h.end || 0) - (h.start || 0);
+    if (dur < 10 * 60e3) continue;
+    n += h.kills[0].n;
+    ms += dur;
+  }
+  return n ? { perHour: n / (ms / HOUR), hours: ms / HOUR } : null;
 }
 
 // XP per uur uit je eigen sessies waarin deze skill het meest XP gaf

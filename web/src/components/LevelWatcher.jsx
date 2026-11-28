@@ -15,7 +15,7 @@ export default function LevelWatcher() {
     // Na het wisselen van spel staan heel even nog de stats van het andere spel klaar: die niet vergelijken
     if (!p.skills.every((s) => s.name === 'Overall' || cfg.skills.includes(s.name))) return;
     // XP-geschiedenis voor de XP-tracker bijwerken (alleen als er iets veranderd is)
-    if (recordSnapshot(xphist, game, rsn, p.skills)) update('xphist', (h) => recordSnapshot(h, game, rsn, p.skills) || h);
+    if (recordSnapshot(xphist, game, rsn, p.skills, game === 'osrs' ? p.activities : null)) update('xphist', (h) => recordSnapshot(h, game, rsn, p.skills, game === 'osrs' ? p.activities : null) || h);
     const key = `tick.levels.${game}.${rsn.toLowerCase()}`;
     const now = Object.fromEntries(p.skills.filter((s) => s.level != null).map((s) => [s.name, s.level]));
     let prev = null;

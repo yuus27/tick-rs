@@ -13,6 +13,8 @@ import SkillGuide from './pages/SkillGuide.jsx';
 import Wiki from './pages/Wiki.jsx';
 import WikiPage from './pages/WikiPage.jsx';
 import Money from './pages/Money.jsx';
+import PvM from './pages/PvM.jsx';
+import Gear from './pages/Gear.jsx';
 import Goals from './pages/Goals.jsx';
 import Tools from './pages/Tools.jsx';
 import Settings from './pages/Settings.jsx';
@@ -49,6 +51,8 @@ function View({ route }) {
     case 'skills': return b ? <SkillGuide skill={b} query={route.query} /> : <Skills />;
     case 'wiki': return b ? <WikiPage title={b} anchor={route.query.a} /> : <Wiki query={route.query} />;
     case 'money': return <Money />;
+    case 'pvm': return <PvM boss={b} />;
+    case 'gear': return <Gear />;
     case 'goals': return <Goals />;
     case 'tools': return <Tools />;
     case 'settings': return <Settings />;
